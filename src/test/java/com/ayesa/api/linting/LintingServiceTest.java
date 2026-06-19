@@ -37,17 +37,81 @@ class LintingServiceTest {
                   contact:
                     name: "Dev"
                     email: "dev@test.com"
+                  x-domain: "testing"
+                  x-business-capability: "test-cap"
+                servers:
+                  - url: https://api.test.com
+                components:
+                  securitySchemes:
+                    oauth2:
+                      type: oauth2
+                      flows:
+                        clientCredentials:
+                          tokenUrl: https://auth.test.com/token
+                          scopes:
+                            read:items: "Read items"
+                  schemas:
+                    Error:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        title:
+                          type: string
+                        status:
+                          type: integer
+                        detail:
+                          type: string
+                security:
+                  - oauth2:
+                      - read:items
                 paths:
-                  /items:
+                  /v1/items:
                     get:
                       operationId: listItems
                       summary: "List items"
                       description: "Returns all items"
+                      parameters:
+                        - name: X-Correlation-Id
+                          in: header
+                          schema:
+                            type: string
                       responses:
                         "200":
                           description: "OK"
+                          content:
+                            application/json:
+                              schema:
+                                type: array
+                                items:
+                                  type: object
+                              example:
+                                - id: 1
                         "500":
                           description: "Error"
+                          content:
+                            application/json:
+                              schema:
+                                $ref: '#/components/schemas/Error'
+                              example:
+                                type: "about:blank"
+                                title: "Error"
+                                status: 500
+                                detail: "Unexpected"
+                  /health:
+                    get:
+                      operationId: health
+                      summary: "Health"
+                      description: "Health check"
+                      responses:
+                        "200":
+                          description: "OK"
+                          content:
+                            application/json:
+                              schema:
+                                type: object
+                              example:
+                                status: "UP"
                 """;
 
         LintingResult result = lintingService.analyze(spec);

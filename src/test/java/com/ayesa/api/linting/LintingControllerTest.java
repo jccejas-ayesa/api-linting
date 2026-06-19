@@ -29,17 +29,82 @@ class LintingControllerTest {
               contact:
                 name: "Test"
                 email: "test@example.com"
+              x-domain: "testing"
+              x-business-capability: "test-capability"
+            servers:
+              - url: https://api.example.com
+            components:
+              securitySchemes:
+                oauth2:
+                  type: oauth2
+                  flows:
+                    clientCredentials:
+                      tokenUrl: https://auth.example.com/token
+                      scopes:
+                        read:users: "Read users"
+              schemas:
+                Error:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    title:
+                      type: string
+                    status:
+                      type: integer
+                    detail:
+                      type: string
+            security:
+              - oauth2:
+                  - read:users
             paths:
-              /users:
+              /v1/users:
                 get:
                   operationId: getUsers
                   summary: "List all users"
                   description: "Returns a list of users"
+                  parameters:
+                    - name: X-Correlation-Id
+                      in: header
+                      schema:
+                        type: string
                   responses:
                     "200":
                       description: "Successful response"
+                      content:
+                        application/json:
+                          schema:
+                            type: array
+                            items:
+                              type: object
+                          example:
+                            - id: 1
+                              name: "John"
                     "500":
                       description: "Internal server error"
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/Error'
+                          example:
+                            type: "about:blank"
+                            title: "Internal Server Error"
+                            status: 500
+                            detail: "An unexpected error occurred"
+              /health:
+                get:
+                  operationId: healthCheck
+                  summary: "Health check"
+                  description: "Returns service health status"
+                  responses:
+                    "200":
+                      description: "Service is healthy"
+                      content:
+                        application/json:
+                          schema:
+                            type: object
+                          example:
+                            status: "UP"
             """;
 
     private static final String MINIMAL_OAS = """
@@ -99,7 +164,7 @@ class LintingControllerTest {
         mockMvc.perform(get("/api/v1/lint/rules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(5));
+                .andExpect(jsonPath("$.length()").value(20));
     }
 
     @Test
