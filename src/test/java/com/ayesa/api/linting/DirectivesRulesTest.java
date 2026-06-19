@@ -218,7 +218,7 @@ class DirectivesRulesTest {
                 """;
 
         LintingResult result = lintingService.analyze(spec);
-        assertTrue(hasRuleIssue(result, "health-endpoints-required"));
+        assertTrue(hasRuleIssue(result, "health-check-complete"));
     }
 
     @Test
@@ -238,7 +238,9 @@ class DirectivesRulesTest {
                 """;
 
         LintingResult result = lintingService.analyze(spec);
-        assertFalse(hasRuleIssue(result, "health-endpoints-required"));
+        assertFalse(result.issues().stream()
+                .anyMatch(i -> i.ruleId().equals("health-check-complete")
+                        && i.message().contains("Missing liveness")));
     }
 
     @Test
