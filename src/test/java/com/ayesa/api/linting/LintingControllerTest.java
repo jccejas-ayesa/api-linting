@@ -29,8 +29,16 @@ class LintingControllerTest {
               contact:
                 name: "Test"
                 email: "test@example.com"
+              license:
+                name: "Apache 2.0"
+                url: "https://www.apache.org/licenses/LICENSE-2.0"
               x-domain: "testing"
               x-business-capability: "test-capability"
+            tags:
+              - name: users
+                description: "User management operations"
+              - name: health
+                description: "Health check operations"
             servers:
               - url: https://api.example.com
             components:
@@ -60,7 +68,9 @@ class LintingControllerTest {
             paths:
               /v1/users:
                 get:
-                  operationId: getUsers
+                  operationId: get-users
+                  tags:
+                    - users
                   summary: "List all users"
                   description: "Returns a list of users"
                   parameters:
@@ -93,7 +103,9 @@ class LintingControllerTest {
                             detail: "An unexpected error occurred"
               /health:
                 get:
-                  operationId: healthCheck
+                  operationId: health-check
+                  tags:
+                    - health
                   summary: "Health check"
                   description: "Returns service health status"
                   responses:
@@ -164,7 +176,7 @@ class LintingControllerTest {
         mockMvc.perform(get("/api/v1/lint/rules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(70));
+                .andExpect(jsonPath("$.length()").value(80));
     }
 
     @Test
