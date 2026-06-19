@@ -164,7 +164,7 @@ class LintingControllerTest {
         mockMvc.perform(get("/api/v1/lint/rules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(34));
+                .andExpect(jsonPath("$.length()").value(39));
     }
 
     @Test
