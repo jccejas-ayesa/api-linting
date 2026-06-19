@@ -37,6 +37,11 @@ public class ErrorModelStandardRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "openapi-best-practices";
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();

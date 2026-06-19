@@ -29,6 +29,11 @@ public class DescriptionRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "api-documentation-best-practices";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

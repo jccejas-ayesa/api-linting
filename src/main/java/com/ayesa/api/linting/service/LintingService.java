@@ -25,7 +25,11 @@ public class LintingService {
     }
 
     public LintingResult analyze(String oasContent) {
-        log.info("Starting OAS analysis");
+        return analyze(oasContent, null);
+    }
+
+    public LintingResult analyze(String oasContent, List<String> rulesetIds) {
+        log.info("Starting OAS analysis{}", rulesetIds != null ? " with rulesets: " + rulesetIds : "");
 
         List<LintingIssue> issues = new ArrayList<>();
 
@@ -46,7 +50,7 @@ public class LintingService {
         }
 
         // Run linting rules
-        issues.addAll(engine.analyze(openAPI));
+        issues.addAll(engine.analyze(openAPI, rulesetIds));
 
         LintingResult result = LintingResult.of(issues);
         log.info("Analysis complete: {} issues found (valid={})", result.totalIssues(), result.valid());

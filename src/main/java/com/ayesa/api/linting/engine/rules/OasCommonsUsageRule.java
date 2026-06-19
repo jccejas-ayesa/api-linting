@@ -41,6 +41,11 @@ public class OasCommonsUsageRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "api-catalog-information-best-practices";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

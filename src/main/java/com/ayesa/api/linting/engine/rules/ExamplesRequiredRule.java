@@ -34,6 +34,11 @@ public class ExamplesRequiredRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "required-examples";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

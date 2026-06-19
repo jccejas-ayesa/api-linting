@@ -34,6 +34,11 @@ public class Oauth2RequiredRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "authentication-security-best-practices";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 
