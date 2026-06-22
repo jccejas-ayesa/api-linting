@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Audit API
+  version: 1.3.0
+  description: Audit logging API for operational and compliance trace events.
+  x-domain: compliance
+  x-business-capability: audit-trail-management
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://audit.example.com/api/v1
+  description: Audit endpoint.
+tags:
+- name: AuditEvents
+  description: Audit event operations.
+- name: Reports
+  description: Compliance report operations.
+paths:
+  /audit-events:
+    get:
+      summary: List audit events
+      operationId: list-audit-events
+      responses:
+        '200':
+          description: Audit event collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEvent'
+              example:
+              - id: aud-1001
+                actor: usr-1001
+                action: config.update
+                occurredAt: '2026-06-22T10:00:00Z'
+      description: Returns audit events within a time range.
+      tags:
+      - AuditEvents
+      parameters:
+      - name: from
+        in: query
+        required: false
+        description: Inclusive start timestamp.
+        schema:
+          type: string
+        example: '2026-06-22T00:00:00Z'
+      - name: to
+        in: query
+        required: false
+        description: Inclusive end timestamp.
+        schema:
+          type: string
+        example: '2026-06-22T23:59:59Z'
+      - name: api_key
+        in: query
+        required: false
+        description: Legacy analytics key in query string.
+        schema:
+          type: string
+        example: legacy-audit-key
+      security:
+      - queryKey: []
+  /audit-events/{eventId}:
+    get:
+      summary: Get audit event
+      operationId: get-audit-event-by-id
+      responses:
+        '200':
+          description: Audit event response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEvent'
+              example:
+                id: aud-1001
+                actor: usr-1001
+                action: config.update
+                occurredAt: '2026-06-22T10:00:00Z'
+      description: Retrieves an audit event.
+      tags:
+      - AuditEvents
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        description: Audit event identifier.
+        schema:
+          type: string
+        example: aud-1001
+      security:
+      - queryKey: []
+  /reports/compliance:
+    post:
+      summary: Generate compliance report
+      operationId: generate-compliance-report
+      responses:
+        '202':
+          description: Report generation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+              example:
+                id: cmp-1001
+                scope: gdpr
+                status: queued
+      description: Generates a compliance report for a regulatory scope.
+      tags:
+      - Reports
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceReportInput'
+            example:
+              scope: gdpr
+              from: '2026-06-01'
+              to: '2026-06-22'
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - queryKey: []
+components:
+  securitySchemes:
+    queryKey:
+      type: apiKey
+      in: query
+      name: api_key
+  schemas:
+    AuditEvent:
+      type: object
+      description: Audit event.
+      properties:
+        id:
+          type: string
+          description: Event id.
+          example: aud-1001
+        actor:
+          type: string
+          description: Actor id.
+          example: usr-1001
+        action:
+          type: string
+          description: Action name.
+          example: config.update
+        occurredAt:
+          type: string
+          description: Event timestamp.
+          example: '2026-06-22T10:00:00Z'
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - actor
+      - action
+      - occurredAt
+    ComplianceReport:
+      type: object
+      description: Compliance report job.
+      properties:
+        id:
+          type: string
+          description: Report id.
+          example: cmp-1001
+        scope:
+          type: string
+          description: Regulatory scope.
+          example: gdpr
+        status:
+          type: string
+          description: Generation status.
+          example: queued
+          enum:
+          - queued
+          - ready
+          - failed
+      additionalProperties: false
+      required:
+      - id
+      - scope
+      - status
+    ComplianceReportInput:
+      type: object
+      description: Compliance report request.
+      properties:
+        scope:
+          type: string
+          description: Regulatory scope.
+          example: gdpr
+        from:
+          type: string
+          description: Start date.
+          example: '2026-06-01'
+        to:
+          type: string
+          description: End date.
+          example: '2026-06-22'
+      additionalProperties: false
+      required:
+      - scope
+      - from
+      - to
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- queryKey: []

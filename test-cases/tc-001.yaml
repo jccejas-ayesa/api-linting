@@ -1,0 +1,398 @@
+openapi: 3.0.3
+info:
+  title: Simple User API
+  version: 1.0.0
+  description: API for managing application users with secure CRUD operations.
+  x-domain: identity
+  x-business-capability: user-lifecycle-management
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.example.com/api/v1
+  description: Primary API endpoint.
+tags:
+- name: User
+  description: Operations for managing users.
+- name: Health
+  description: Operational health and diagnostics.
+paths:
+  /users:
+    get:
+      summary: List users
+      operationId: list-users
+      responses:
+        '200':
+          description: User collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+                description: List of users.
+              example:
+              - id: usr-1001
+                email: alice@example.com
+                displayName: Alice Example
+                status: active
+                createdAt: '2026-06-22T10:00:00Z'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Returns the current collection of users.
+      tags:
+      - User
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create user
+      operationId: create-user
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: usr-1001
+                email: alice@example.com
+                displayName: Alice Example
+                status: active
+                createdAt: '2026-06-22T10:00:00Z'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Creates a new user resource using the provided payload.
+      tags:
+      - User
+      requestBody:
+        required: true
+        description: Payload used to create a user.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+            example:
+              email: alice@example.com
+              displayName: Alice Example
+              status: active
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /users/{userId}:
+    get:
+      summary: Get user
+      operationId: get-user-by-id
+      responses:
+        '200':
+          description: User response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: usr-1001
+                email: alice@example.com
+                displayName: Alice Example
+                status: active
+                createdAt: '2026-06-22T10:00:00Z'
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Retrieves a single user by identifier.
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Identifier for the target user.
+        schema:
+          type: string
+        example: usr-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    patch:
+      summary: Update user
+      operationId: update-user
+      responses:
+        '200':
+          description: User response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: usr-1001
+                email: alice@example.com
+                displayName: Alice Example
+                status: active
+                createdAt: '2026-06-22T10:00:00Z'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Applies a partial update to the selected user.
+      tags:
+      - User
+      requestBody:
+        required: true
+        description: Fields to update on the user.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+            example:
+              email: alice@example.com
+              displayName: Alice Example
+              status: active
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Identifier for the target user.
+        schema:
+          type: string
+        example: usr-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+    delete:
+      summary: Delete user
+      operationId: delete-user
+      responses:
+        '204':
+          description: Resource deleted.
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Removes the selected user resource.
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Identifier for the target user.
+        schema:
+          type: string
+        example: usr-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    User:
+      type: object
+      description: User representation.
+      properties:
+        id:
+          type: string
+          description: Stable user identifier.
+          example: usr-1001
+        email:
+          type: string
+          description: Unique login email.
+          example: alice@example.com
+          format: email
+        displayName:
+          type: string
+          description: Friendly user display name.
+          example: Alice Example
+        status:
+          type: string
+          description: Provisioning status.
+          example: active
+          enum:
+          - active
+          - inactive
+          - suspended
+        createdAt:
+          type: string
+          description: Creation timestamp.
+          example: '2026-06-22T10:00:00Z'
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - displayName
+      - status
+    UserCreateRequest:
+      type: object
+      description: Payload used to create a user.
+      properties:
+        email:
+          type: string
+          description: Unique login email.
+          example: alice@example.com
+          format: email
+        displayName:
+          type: string
+          description: Friendly user display name.
+          example: Alice Example
+        status:
+          type: string
+          description: Provisioning status.
+          example: active
+          enum:
+          - active
+          - inactive
+          - suspended
+      additionalProperties: false
+      required:
+      - email
+      - displayName
+      - status
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

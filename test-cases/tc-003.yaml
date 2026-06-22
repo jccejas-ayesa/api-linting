@@ -1,0 +1,399 @@
+openapi: 3.0.3
+info:
+  title: Order API
+  version: 2.0.0
+  description: Order management API with create, query, and update workflows.
+  x-domain: commerce
+  x-business-capability: order-processing
+  x-data-sensitivity: confidential
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.example.com/api/v1
+  description: Primary API endpoint.
+tags:
+- name: Order
+  description: Operations for managing orders.
+- name: Health
+  description: Operational health and diagnostics.
+paths:
+  /orders:
+    get:
+      summary: List orders
+      operationId: list-orders
+      responses:
+        '200':
+          description: Order collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+                description: List of orders.
+              example:
+              - id: ord-1001
+                customerId: cus-1001
+                status: pending
+                totalAmount: 149.95
+                createdAt: '2026-06-22T09:30:00Z'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Returns the current collection of orders.
+      tags:
+      - Order
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create order
+      operationId: create-order
+      responses:
+        '200':
+          description: Order created but returning 200 instead of 201.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                customerId: cus-1001
+                status: pending
+                totalAmount: 149.95
+        '400':
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: invalid_order
+                message: Order payload is invalid.
+      description: Creates a new order resource using the provided payload.
+      tags:
+      - Order
+      requestBody:
+        required: true
+        description: Payload used to create a order.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+            example:
+              customerId: cus-1001
+              status: pending
+              totalAmount: 149.95
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /orders/{orderId}:
+    get:
+      summary: Get order
+      operationId: get-order-by-id
+      responses:
+        '200':
+          description: Order response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                id: ord-1001
+                customerId: cus-1001
+                status: pending
+                totalAmount: 149.95
+                createdAt: '2026-06-22T09:30:00Z'
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Retrieves a single order by identifier.
+      tags:
+      - Order
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        description: Identifier for the target order.
+        schema:
+          type: string
+        example: ord-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    patch:
+      summary: Update order
+      operationId: update-order
+      responses:
+        '200':
+          description: Order response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Applies a partial update to the selected order.
+      tags:
+      - Order
+      requestBody:
+        required: true
+        description: Fields to update on the order.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+            example:
+              customerId: cus-1001
+              status: pending
+              totalAmount: 149.95
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        description: Identifier for the target order.
+        schema:
+          type: string
+        example: ord-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+    delete:
+      summary: Delete order
+      operationId: delete-order
+      responses:
+        '200':
+          description: Order deleted with a payload instead of a 204 response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                id: ord-1001
+                customerId: cus-1001
+                status: cancelled
+                totalAmount: 149.95
+        '404':
+          description: Order not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Order not found.
+      description: Removes the selected order resource.
+      tags:
+      - Order
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        description: Identifier for the target order.
+        schema:
+          type: string
+        example: ord-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Order:
+      type: object
+      description: Order representation.
+      properties:
+        id:
+          type: string
+          description: Order identifier.
+          example: ord-1001
+        customerId:
+          type: string
+          description: Customer identifier.
+          example: cus-1001
+        status:
+          type: string
+          description: Current order state.
+          example: pending
+          enum:
+          - pending
+          - paid
+          - cancelled
+        totalAmount:
+          type: number
+          description: Total charge amount.
+          example: 149.95
+          minimum: 0
+        createdAt:
+          type: string
+          description: Creation timestamp.
+          example: '2026-06-22T09:30:00Z'
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - customerId
+      - status
+      - totalAmount
+    OrderCreateRequest:
+      type: object
+      description: Payload used to create a order.
+      properties:
+        customerId:
+          type: string
+          description: Customer identifier.
+          example: cus-1001
+        status:
+          type: string
+          description: Current order state.
+          example: pending
+          enum:
+          - pending
+          - paid
+          - cancelled
+        totalAmount:
+          type: number
+          description: Total charge amount.
+          example: 149.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - customerId
+      - status
+      - totalAmount
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

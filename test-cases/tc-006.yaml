@@ -1,0 +1,429 @@
+openapi: 3.0.3
+info:
+  title: Tag API
+  version: 1.2.0
+  description: Tag management API for content classification.
+  x-domain: content
+  x-business-capability: tag-classification
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://api.example.com/api/v1
+  description: Primary API endpoint.
+tags:
+- name: Tag
+  description: Operations for managing tags.
+- name: Health
+  description: Operational health and diagnostics.
+paths:
+  /tags:
+    get:
+      summary: List tags
+      operationId: list-tags
+      responses:
+        '200':
+          description: Tag collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+                description: List of tags.
+              example:
+              - id: tag-1001
+                name: featured
+                tagType: system
+                status: active
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Returns the current collection of tags.
+      tags:
+      - Tag
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create tag
+      operationId: create-tag
+      responses:
+        '201':
+          description: Created tag response without a schema.
+          content:
+            application/json:
+              example:
+                id: tag-1001
+                name: featured
+                tagType: system
+                status: active
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Creates a new tag resource using the provided payload.
+      tags:
+      - Tag
+      requestBody:
+        required: true
+        description: Payload used to create a tag.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreateRequest'
+            example:
+              name: featured
+              tagType: system
+              status: active
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /tags/{tagId}:
+    get:
+      summary: Get tag
+      operationId: get-tag-by-id
+      responses:
+        '200':
+          description: Tag response without a response schema.
+          content:
+            application/json:
+              example:
+                id: tag-1001
+                name: featured
+                tagType: system
+                status: active
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Retrieves a single tag by identifier.
+      tags:
+      - Tag
+      parameters:
+      - name: tagId
+        in: path
+        required: true
+        description: Identifier for the target tag.
+        schema:
+          type: string
+        example: tag-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    patch:
+      summary: Update tag
+      operationId: update-tag
+      responses:
+        '200':
+          description: Tag response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+              example:
+                id: tag-1001
+                name: featured
+                tagType: system
+                status: active
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Applies a partial update to the selected tag.
+      tags:
+      - Tag
+      requestBody:
+        required: true
+        description: Fields to update on the tag.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreateRequest'
+            example:
+              name: featured
+              tagType: system
+              status: active
+      parameters:
+      - name: tagId
+        in: path
+        required: true
+        description: Identifier for the target tag.
+        schema:
+          type: string
+        example: tag-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+    delete:
+      summary: Delete tag
+      operationId: delete-tag
+      responses:
+        '204':
+          description: Resource deleted.
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Removes the selected tag resource.
+      tags:
+      - Tag
+      parameters:
+      - name: tagId
+        in: path
+        required: true
+        description: Identifier for the target tag.
+        schema:
+          type: string
+        example: tag-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Tag:
+      type: object
+      description: Tag representation.
+      properties:
+        id:
+          type: string
+          description: Tag identifier.
+          example: tag-1001
+        name:
+          type: string
+          description: Tag name.
+          example: featured
+        tagType:
+          type: string
+          description: Tag classification.
+          example: system
+          enum:
+          - system
+          - user
+          - system
+        status:
+          type: string
+          description: Tag lifecycle state.
+          example: active
+          enum:
+          - active
+          - retired
+        metadata:
+          type: object
+          properties:
+            createdBy:
+              type: string
+              description: Creator identifier.
+              example: usr-1001
+            labels:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: Label key.
+                    example: topic
+                  value:
+                    type: string
+                    description: Label value.
+                    example: featured
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - tagType
+      - status
+    TagCreateRequest:
+      type: object
+      description: Payload used to create a tag.
+      properties:
+        name:
+          type: string
+          description: Tag name.
+          example: featured
+        tagType:
+          type: string
+          description: Tag classification.
+          example: system
+          enum:
+          - system
+          - user
+          - system
+        status:
+          type: string
+          description: Tag lifecycle state.
+          example: active
+          enum:
+          - active
+          - retired
+        metadata:
+          type: object
+          properties:
+            createdBy:
+              type: string
+              description: Creator identifier.
+              example: usr-1001
+            labels:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: Label key.
+                    example: topic
+                  value:
+                    type: string
+                    description: Label value.
+                    example: featured
+      additionalProperties: false
+      required:
+      - name
+      - tagType
+      - status
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

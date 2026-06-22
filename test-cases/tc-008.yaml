@@ -1,0 +1,526 @@
+openapi: 3.0.3
+info:
+  title: E-commerce Platform API
+  version: 2.3.1
+  description: Multi-resource commerce API covering products, carts, orders, and customers.
+  x-domain: commerce
+  x-business-capability: digital-commerce
+  x-data-sensitivity: confidential
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://commerce.example.com/api/v2
+  description: Primary commerce endpoint.
+tags:
+- name: Products
+  description: Product catalog operations.
+- name: Carts
+  description: Shopping cart operations.
+- name: Orders
+  description: Order lifecycle operations.
+- name: Customers
+  description: Customer account operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /products:
+    get:
+      summary: List products
+      operationId: list-products
+      responses:
+        '200':
+          description: Product collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              example:
+              - id: prd-1001
+                name: Keyboard
+                price: 99.95
+      description: Lists products available for purchase.
+      tags:
+      - Products
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create product
+      operationId: create-product
+      responses:
+        '201':
+          description: Product created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+              example:
+                id: prd-1002
+                name: Mouse
+                price: 49.95
+      description: Creates a catalog product.
+      tags:
+      - Products
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+            example:
+              name: Mouse
+              price: 49.95
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /carts:
+    get:
+      summary: List carts
+      operationId: list-carts
+      responses:
+        '200':
+          description: Cart collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cart'
+              example:
+              - id: crt-1001
+                customerId: cus-1001
+                status: open
+      description: Returns active shopping carts.
+      tags:
+      - Carts
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create cart
+      operationId: create-cart
+      responses:
+        '201':
+          description: Cart created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+              example:
+                id: crt-1001
+                customerId: cus-1001
+                status: open
+      description: Creates a cart for a customer session.
+      tags:
+      - Carts
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartInput'
+            example:
+              customerId: cus-1001
+              status: open
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /orders:
+    get:
+      summary: List orders
+      operationId: list-orders
+      responses:
+        '200':
+          description: Order collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+              example:
+              - id: ord-2001
+                customerId: cus-1001
+                status: pending
+                total: 149.95
+      description: Returns customer orders.
+      tags:
+      - Orders
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create order
+      operationId: create-order
+      responses:
+        '202':
+          description: Order accepted for asynchronous creation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                id: ord-2001
+                customerId: cus-1001
+                status: pending
+                total: 149.95
+      description: Converts a cart into an order.
+      tags:
+      - Orders
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+            example:
+              customerId: cus-1001
+              cartId: crt-1001
+              total: 149.95
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /customers/{customerId}/orders/{orderId}/items:
+    get:
+      summary: List customer order items
+      operationId: list-customer-order-items
+      responses:
+        '200':
+          description: Order line items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderLine'
+              example:
+              - sku: KB-1001
+                quantity: 1
+                unitPrice: 99.95
+      description: Returns line items for a customer order through a deeply nested
+        route.
+      tags:
+      - Customers
+      - Orders
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        description: Customer identifier.
+        schema:
+          type: string
+        example: cus-1001
+      - name: orderId
+        in: path
+        required: true
+        description: Order identifier.
+        schema:
+          type: string
+        example: ord-2001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Product:
+      type: object
+      description: Catalog product.
+      properties:
+        id:
+          type: string
+          description: Product id.
+          example: prd-1001
+        name:
+          type: string
+          description: Product name.
+          example: Keyboard
+        price:
+          type: number
+          description: Unit price.
+          example: 99.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - price
+    ProductInput:
+      type: object
+      description: Product create payload.
+      properties:
+        name:
+          type: string
+          description: Product name.
+          example: Mouse
+        price:
+          type: number
+          description: Unit price.
+          example: 49.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - name
+      - price
+    Cart:
+      type: object
+      description: Shopping cart.
+      properties:
+        id:
+          type: string
+          description: Cart id.
+          example: crt-1001
+        customerId:
+          type: string
+          description: Customer id.
+          example: cus-1001
+        status:
+          type: string
+          description: Cart status.
+          example: open
+          enum:
+          - open
+          - ordered
+          - abandoned
+      additionalProperties: false
+      required:
+      - id
+      - customerId
+      - status
+    CartInput:
+      type: object
+      description: Cart create payload.
+      properties:
+        customerId:
+          type: string
+          description: Customer id.
+          example: cus-1001
+        status:
+          type: string
+          description: Cart status.
+          example: open
+          enum:
+          - open
+          - ordered
+          - abandoned
+      additionalProperties: false
+      required:
+      - customerId
+      - status
+    Order:
+      type: object
+      description: Order aggregate.
+      properties:
+        id:
+          type: string
+          description: Order id.
+          example: ord-2001
+        customerId:
+          type: string
+          description: Customer id.
+          example: cus-1001
+        status:
+          type: string
+          description: Order status.
+          example: pending
+          enum:
+          - pending
+          - paid
+          - fulfilled
+        total:
+          type: number
+          description: Order total.
+          example: 149.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - id
+      - customerId
+      - status
+      - total
+    OrderInput:
+      type: object
+      description: Order create payload.
+      properties:
+        customerId:
+          type: string
+          description: Customer id.
+          example: cus-1001
+        cartId:
+          type: string
+          description: Cart id.
+          example: crt-1001
+        total:
+          type: number
+          description: Order total.
+          example: 149.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - customerId
+      - cartId
+      - total
+    OrderLine:
+      type: object
+      description: Order line item.
+      properties:
+        sku:
+          type: string
+          description: SKU.
+          example: KB-1001
+        quantity:
+          type: integer
+          description: Ordered units.
+          example: 1
+          minimum: 1
+        unitPrice:
+          type: number
+          description: Price per unit.
+          example: 99.95
+          minimum: 0
+      additionalProperties: false
+      required:
+      - sku
+      - quantity
+      - unitPrice
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

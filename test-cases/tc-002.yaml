@@ -1,0 +1,322 @@
+openapi: 3.0.3
+info:
+  title: Product API
+  version: 1.1.0
+  x-domain: catalog
+  x-business-capability: product-catalog-management
+  x-data-sensitivity: internal
+servers:
+- url: https://api.example.com/api/v1
+  description: Primary API endpoint.
+tags:
+- name: Product
+- name: Health
+paths:
+  /products:
+    get:
+      summary: List products
+      operationId: list-products
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+                description: List of products.
+        '400':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+      - Product
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create product
+      operationId: create-product
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+      - Product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequest'
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /products/{productId}:
+    get:
+      summary: Get product
+      operationId: get-product-by-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+      - Product
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        description: Identifier for the target product.
+        schema:
+          type: string
+        example: prd-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    patch:
+      summary: Update product
+      operationId: update-product
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+      - Product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequest'
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        description: Identifier for the target product.
+        schema:
+          type: string
+        example: prd-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+    delete:
+      summary: Delete product
+      operationId: delete-product
+      responses:
+        '204':
+          description: OK
+        '404':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+      - Product
+      parameters:
+      - name: productId
+        in: path
+        required: true
+        description: Identifier for the target product.
+        schema:
+          type: string
+        example: prd-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: prd-1001
+        name:
+          type: string
+          example: Wireless Keyboard
+        sku:
+          type: string
+          example: KB-1001
+        price:
+          type: number
+          example: 99.95
+          minimum: 0
+        availability:
+          type: string
+          example: in-stock
+          enum:
+          - in-stock
+          - backorder
+          - discontinued
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - sku
+      - price
+    ProductCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Wireless Keyboard
+        sku:
+          type: string
+          example: KB-1001
+        price:
+          type: number
+          example: 99.95
+          minimum: 0
+        availability:
+          type: string
+          example: in-stock
+          enum:
+          - in-stock
+          - backorder
+          - discontinued
+      additionalProperties: false
+      required:
+      - name
+      - sku
+      - price
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

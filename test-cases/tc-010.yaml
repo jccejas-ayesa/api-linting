@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: Payment Gateway API
+  version: 3.0.0
+  description: API for card payments, captures, and refunds.
+  x-domain: payments
+  x-business-capability: payment-processing
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://payments.example.com/api/v3
+  description: Payment processing endpoint.
+tags:
+- name: Payments
+  description: Payment operations.
+- name: Refunds
+  description: Refund operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /payments:
+    get:
+      summary: List payments
+      operationId: list-payments
+      responses:
+        '200':
+          description: Payment collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+              example:
+              - id: pay-1001
+                amount: 100.0
+                currency: EUR
+                status: authorized
+      description: Lists recent payment transactions.
+      tags:
+      - Payments
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+    post:
+      summary: Create payment
+      operationId: create-payment
+      responses:
+        '201':
+          description: Payment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                id: pay-1001
+                amount: 100.0
+                currency: EUR
+                status: authorized
+      description: Authorizes a payment for capture.
+      tags:
+      - Payments
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+            example:
+              amount: 100.0
+              currency: EUR
+              sourceToken: tok_test_123
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+  /payments/{paymentId}:
+    get:
+      summary: Get payment
+      operationId: get-payment-by-id
+      responses:
+        '200':
+          description: Payment response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                id: pay-1001
+                amount: 100.0
+                currency: EUR
+                status: authorized
+        '404':
+          description: Payment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Payment not found.
+      description: Retrieves a payment transaction.
+      tags:
+      - Payments
+      parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment identifier.
+        schema:
+          type: string
+        example: pay-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+  /refunds:
+    post:
+      summary: Create refund
+      operationId: create-refund
+      responses:
+        '201':
+          description: Refund created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+              example:
+                id: rfd-1001
+                paymentId: pay-1001
+                status: pending
+      description: Creates a payment refund request.
+      tags:
+      - Refunds
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundInput'
+            example:
+              paymentId: pay-1001
+              amount: 25.0
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://auth.example.com/oauth/authorize
+          scopes:
+            payments: Process and query payments.
+  schemas:
+    Payment:
+      type: object
+      description: Payment transaction.
+      properties:
+        id:
+          type: string
+          description: Payment id.
+          example: pay-1001
+        amount:
+          type: number
+          description: Payment amount.
+          example: 100.0
+          minimum: 0
+        currency:
+          type: string
+          description: ISO currency.
+          example: EUR
+        status:
+          type: string
+          description: Payment status.
+          example: authorized
+          enum:
+          - authorized
+          - captured
+          - failed
+      additionalProperties: false
+      required:
+      - id
+      - amount
+      - currency
+      - status
+    PaymentInput:
+      type: object
+      description: Payment create payload.
+      properties:
+        amount:
+          type: number
+          description: Payment amount.
+          example: 100.0
+          minimum: 0
+        currency:
+          type: string
+          description: ISO currency.
+          example: EUR
+        sourceToken:
+          type: string
+          description: Tokenized payment source.
+          example: tok_test_123
+      additionalProperties: false
+      required:
+      - amount
+      - currency
+      - sourceToken
+    Refund:
+      type: object
+      description: Refund request.
+      properties:
+        id:
+          type: string
+          description: Refund id.
+          example: rfd-1001
+        paymentId:
+          type: string
+          description: Original payment id.
+          example: pay-1001
+        status:
+          type: string
+          description: Refund status.
+          example: pending
+          enum:
+          - pending
+          - processed
+          - failed
+      additionalProperties: false
+      required:
+      - id
+      - paymentId
+      - status
+    RefundInput:
+      type: object
+      description: Refund create payload.
+      properties:
+        paymentId:
+          type: string
+          description: Original payment id.
+          example: pay-1001
+        amount:
+          type: number
+          description: Refund amount.
+          example: 25.0
+          minimum: 0
+      additionalProperties: false
+      required:
+      - paymentId
+      - amount
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - payments

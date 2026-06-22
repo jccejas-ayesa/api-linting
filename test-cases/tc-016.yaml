@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: GraphQL-REST Bridge API
+  version: 1.0.0
+  description: Bridge API that exposes GraphQL-style payloads through REST endpoints.
+  x-domain: integration
+  x-business-capability: graphql-rest-bridging
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://bridge.example.com/api/v1
+  description: Bridge endpoint.
+tags:
+- name: Bridge
+  description: GraphQL bridge operations.
+- name: Schema
+  description: Schema inspection operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /graphql:
+    post:
+      summary: Execute GraphQL document
+      operationId: execute-graphql
+      responses:
+        '200':
+          description: GraphQL execution result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphQLResponse'
+              example:
+                data:
+                  user:
+                    id: usr-1001
+                errors: []
+      description: Executes an arbitrary GraphQL query or mutation document.
+      tags:
+      - Bridge
+      requestBody:
+        required: true
+        description: GraphQL request wrapper.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQLRequest'
+            example:
+              query: 'query User { user(id: \"usr-1001\") { id email } }'
+              variables:
+                includeOrders: true
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /queries/{queryName}:
+    post:
+      summary: Execute named query
+      operationId: execute-named-query
+      responses:
+        '200':
+          description: Named query result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphQLResponse'
+              example:
+                data:
+                  orders: []
+                errors: []
+      description: Executes a pre-registered query using a REST facade.
+      tags:
+      - Bridge
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Named query payload.
+              properties:
+                variables:
+                  type: object
+                  description: GraphQL variables.
+                  additionalProperties: true
+              additionalProperties: false
+            example:
+              variables:
+                customerId: cus-1001
+      parameters:
+      - name: queryName
+        in: path
+        required: true
+        description: Named query identifier.
+        schema:
+          type: string
+        example: orders-by-customer
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /mutations/{mutationName}:
+    post:
+      summary: Execute named mutation
+      operationId: execute_named_mutation
+      responses:
+        '200':
+          description: Named mutation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphQLResponse'
+              example:
+                data:
+                  createOrder:
+                    id: ord-1001
+                errors: []
+      description: Executes a pre-registered mutation using a REST facade.
+      tags:
+      - Bridge
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Named mutation payload.
+              properties:
+                input:
+                  type: object
+                  description: Mutation input payload.
+                  additionalProperties: true
+              additionalProperties: false
+              required:
+              - input
+            example:
+              input:
+                customerId: cus-1001
+                total: 100.0
+      parameters:
+      - name: mutationName
+        in: path
+        required: true
+        description: Named mutation identifier.
+        schema:
+          type: string
+        example: create-order
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /schema:
+    get:
+      summary: Get bridge schema
+      operationId: get-bridge-schema
+      responses:
+        '200':
+          description: Schema response.
+          content:
+            application/json: {}
+      description: Returns the bridge schema snapshot.
+      tags:
+      - Schema
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    GraphQLRequest:
+      type: object
+      description: GraphQL request envelope.
+      properties:
+        query:
+          type: string
+          description: GraphQL document.
+          example: 'query User { user(id: \"usr-1001\") { id } }'
+        variables:
+          type: object
+          description: GraphQL variables.
+          additionalProperties: true
+      additionalProperties: false
+      required:
+      - query
+    GraphQLResponse:
+      type: object
+      description: GraphQL response envelope.
+      properties:
+        data:
+          type: object
+          description: GraphQL data section.
+          additionalProperties: true
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message.
+                example: Unknown field.
+          description: GraphQL errors.
+          example: []
+      additionalProperties: false
+      required:
+      - data
+      - errors
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- bearerAuth: []

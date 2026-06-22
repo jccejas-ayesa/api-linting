@@ -1,0 +1,478 @@
+openapi: 3.0.3
+info:
+  title: Microservices Mesh API
+  version: 2.6.0
+  description: Service mesh control plane API for services, routes, retries, and event
+    acknowledgements.
+  x-domain: platform
+  x-business-capability: service-mesh-control
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://mesh.example.com/api/v2
+  description: Mesh control plane endpoint.
+- url: http://mesh-admin.example.com/api/v2
+  description: Legacy admin endpoint.
+tags:
+- name: Services
+  description: Service registry operations.
+- name: Routes
+  description: Route management operations.
+- name: Policies
+  description: Traffic policy operations.
+- name: Events
+  description: Event acknowledgement operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /services:
+    get:
+      summary: List services
+      operationId: list-services
+      responses:
+        '200':
+          description: Service collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+              example:
+              - id: svc-orders
+                version: 1.4.0
+                status: healthy
+      description: Lists registered mesh services.
+      tags:
+      - Services
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+      - headerKey: []
+  /services/{serviceId}/instances:
+    get:
+      summary: List service instances
+      operationId: list-service-instances
+      responses:
+        '200':
+          description: Instance collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceInstance'
+              example:
+              - instanceId: inst-1
+                zone: eu-west-1a
+                healthy: true
+      description: Lists service instances by service identifier.
+      tags:
+      - Services
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        description: Service identifier.
+        schema:
+          type: string
+        example: svc-orders
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+      - headerKey: []
+  /routes:
+    post:
+      summary: Create route
+      operationId: create-route
+      responses:
+        '201':
+          description: Route created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+              example:
+                id: rte-1001
+                sourceService: svc-web
+                matchRules:
+                - path: /orders
+      description: Creates a traffic route with weighted destinations.
+      tags:
+      - Routes
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteInput'
+            example:
+              sourceService: svc-web
+              matchRules:
+              - path: /orders
+              destinations:
+              - serviceId: svc-orders
+                weight: 100
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+      - headerKey: []
+  /policies/retries:
+    put:
+      summary: Replace retry policy
+      operationId: replace-retry-policy
+      responses:
+        '200':
+          description: Retry policy updated.
+          content:
+            application/json: {}
+      description: Replaces the global retry policy.
+      tags:
+      - Policies
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetryPolicy'
+            example:
+              maxAttempts: 3
+              perTryTimeoutMs: 500
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+      - headerKey: []
+  /events/subscriptions/{subscriptionId}/acknowledge:
+    post:
+      summary: Acknowledge event subscription
+      operationId: acknowledge-event-subscription
+      responses:
+        '200':
+          description: Acknowledgement response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Acknowledgement'
+              example:
+                subscriptionId: sub-1001
+                state: acknowledged
+      description: Acknowledges an event delivery across the mesh.
+      tags:
+      - Events
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Acknowledgement request.
+              properties:
+                callbackUrl:
+                  type: string
+                  description: Callback URL.
+                  example: http://consumer.example.com/acks
+                status:
+                  type: string
+                  description: Ack status.
+                  example: acknowledged
+              additionalProperties: false
+              required:
+              - status
+            example:
+              callbackUrl: http://consumer.example.com/acks
+              status: acknowledged
+      parameters:
+      - name: subscriptionId
+        in: path
+        required: true
+        description: Subscription identifier.
+        schema:
+          type: string
+        example: sub-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+      - headerKey: []
+      callbacks:
+        ackHook:
+          '{$request.body#/callbackUrl}':
+            post:
+              responses:
+                '200':
+                  description: Callback consumed.
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+    headerKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    Service:
+      type: object
+      description: Mesh service.
+      properties:
+        id:
+          type: string
+          description: Service id.
+          example: svc-orders
+        version:
+          type: string
+          description: Deployed version.
+          example: 1.4.0
+        status:
+          type: string
+          description: Service status.
+          example: healthy
+          enum:
+          - healthy
+          - degraded
+          - down
+      additionalProperties: false
+      required:
+      - id
+      - version
+      - status
+    ServiceInstance:
+      type: object
+      description: Service instance.
+      properties:
+        instanceId:
+          type: string
+          description: Instance id.
+          example: inst-1
+        zone:
+          type: string
+          description: Failure zone.
+          example: eu-west-1a
+        healthy:
+          type: boolean
+          description: Health flag.
+          example: true
+      additionalProperties: false
+      required:
+      - instanceId
+      - zone
+      - healthy
+    Route:
+      type: object
+      description: Traffic route.
+      properties:
+        id:
+          type: string
+          description: Route id.
+          example: rte-1001
+        sourceService:
+          type: string
+          description: Source service.
+          example: svc-web
+        matchRules:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                description: Match path.
+                example: /orders
+          description: Nested route match rules.
+      additionalProperties: false
+      required:
+      - id
+      - sourceService
+      - matchRules
+    RouteInput:
+      type: object
+      description: Route create payload.
+      properties:
+        sourceService:
+          type: string
+          description: Source service.
+          example: svc-web
+        matchRules:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                description: Match path.
+                example: /orders
+          description: Nested route match rules.
+        destinations:
+          type: array
+          items:
+            type: object
+            properties:
+              serviceId:
+                type: string
+                description: Destination service.
+                example: svc-orders
+              weight:
+                type: integer
+                description: Traffic weight.
+                example: 100
+                minimum: 0
+          description: Destination list.
+      additionalProperties: false
+      required:
+      - sourceService
+      - matchRules
+      - destinations
+    RetryPolicy:
+      type: object
+      description: Retry policy.
+      properties:
+        maxAttempts:
+          type: integer
+          description: Maximum attempts.
+          example: 3
+          minimum: 1
+        perTryTimeoutMs:
+          type: integer
+          description: Timeout per attempt in milliseconds.
+          example: 500
+          minimum: 1
+      additionalProperties: false
+      required:
+      - maxAttempts
+      - perTryTimeoutMs
+    Acknowledgement:
+      type: object
+      description: Acknowledgement response.
+      properties:
+        subscriptionId:
+          type: string
+          description: Subscription id.
+          example: sub-1001
+        state:
+          type: string
+          description: Ack state.
+          example: acknowledged
+      additionalProperties: false
+      required:
+      - subscriptionId
+      - state
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write
+- headerKey: []

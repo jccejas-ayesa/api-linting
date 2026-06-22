@@ -1,0 +1,407 @@
+openapi: 3.0.3
+info:
+  title: Inventory API
+  version: 1.0.2
+  description: Inventory tracking API for warehouse stock movements.
+  x-domain: supply-chain
+  x-business-capability: inventory-control
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: http://inventory.example.com/api/v1
+  description: Legacy warehouse endpoint.
+tags:
+- name: InventoryItem
+  description: Operations for managing inventory-items.
+- name: Health
+  description: Operational health and diagnostics.
+paths:
+  /inventory-items:
+    get:
+      summary: List inventory-items
+      operationId: list-inventory-items
+      responses:
+        '200':
+          description: InventoryItem collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItem'
+                description: List of inventory-items.
+              example:
+              - id: inv-1001
+                sku: KB-1001
+                warehouseCode: MAD-01
+                quantityOnHand: 120
+                status: available
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Returns the current collection of inventory-items.
+      tags:
+      - InventoryItem
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      - name: api_key
+        in: query
+        required: false
+        description: API key forwarded as a query parameter.
+        schema:
+          type: string
+        example: legacy-query-key
+      security:
+      - sessionCookie: []
+      - basicAuth: []
+    post:
+      summary: Create inventoryitem
+      operationId: create-inventoryitem
+      responses:
+        '201':
+          description: InventoryItem created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+              example:
+                id: inv-1001
+                sku: KB-1001
+                warehouseCode: MAD-01
+                quantityOnHand: 120
+                status: available
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Creates a new inventoryitem resource using the provided payload.
+      tags:
+      - InventoryItem
+      requestBody:
+        required: true
+        description: Payload used to create a inventoryitem.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemCreateRequest'
+            example:
+              sku: KB-1001
+              warehouseCode: MAD-01
+              quantityOnHand: 120
+              status: available
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - sessionCookie: []
+      - basicAuth: []
+  /inventory-items/{inventoryItemId}:
+    get:
+      summary: Get inventoryitem
+      operationId: get-inventoryitem-by-id
+      responses:
+        '200':
+          description: InventoryItem response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+              example:
+                id: inv-1001
+                sku: KB-1001
+                warehouseCode: MAD-01
+                quantityOnHand: 120
+                status: available
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Retrieves a single inventoryitem by identifier.
+      tags:
+      - InventoryItem
+      parameters:
+      - name: inventoryItemId
+        in: path
+        required: true
+        description: Identifier for the target inventoryitem.
+        schema:
+          type: string
+        example: inv-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - sessionCookie: []
+      - basicAuth: []
+    patch:
+      summary: Update inventoryitem
+      operationId: update-inventoryitem
+      responses:
+        '200':
+          description: InventoryItem response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+              example:
+                id: inv-1001
+                sku: KB-1001
+                warehouseCode: MAD-01
+                quantityOnHand: 120
+                status: available
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: The payload is invalid.
+      description: Applies a partial update to the selected inventoryitem.
+      tags:
+      - InventoryItem
+      requestBody:
+        required: true
+        description: Fields to update on the inventoryitem.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemCreateRequest'
+            example:
+              sku: KB-1001
+              warehouseCode: MAD-01
+              quantityOnHand: 120
+              status: available
+      parameters:
+      - name: inventoryItemId
+        in: path
+        required: true
+        description: Identifier for the target inventoryitem.
+        schema:
+          type: string
+        example: inv-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - sessionCookie: []
+      - basicAuth: []
+    delete:
+      summary: Delete inventoryitem
+      operationId: delete-inventoryitem
+      responses:
+        '204':
+          description: Resource deleted.
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Resource not found.
+      description: Removes the selected inventoryitem resource.
+      tags:
+      - InventoryItem
+      parameters:
+      - name: inventoryItemId
+        in: path
+        required: true
+        description: Identifier for the target inventoryitem.
+        schema:
+          type: string
+        example: inv-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - sessionCookie: []
+      - basicAuth: []
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: SESSIONID
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    InventoryItem:
+      type: object
+      description: InventoryItem representation.
+      properties:
+        id:
+          type: string
+          description: Inventory record identifier.
+          example: inv-1001
+        sku:
+          type: string
+          description: Referenced SKU.
+          example: KB-1001
+        warehouseCode:
+          type: string
+          description: Warehouse code.
+          example: MAD-01
+        quantityOnHand:
+          type: integer
+          description: Current physical stock.
+          example: 120
+          minimum: 0
+        status:
+          type: string
+          description: Availability state.
+          example: available
+          enum:
+          - available
+          - reserved
+          - damaged
+      additionalProperties: false
+      required:
+      - id
+      - sku
+      - warehouseCode
+      - quantityOnHand
+      - status
+    InventoryItemCreateRequest:
+      type: object
+      description: Payload used to create a inventoryitem.
+      properties:
+        sku:
+          type: string
+          description: Referenced SKU.
+          example: KB-1001
+        warehouseCode:
+          type: string
+          description: Warehouse code.
+          example: MAD-01
+        quantityOnHand:
+          type: integer
+          description: Current physical stock.
+          example: 120
+          minimum: 0
+        status:
+          type: string
+          description: Availability state.
+          example: available
+          enum:
+          - available
+          - reserved
+          - damaged
+      additionalProperties: false
+      required:
+      - sku
+      - warehouseCode
+      - quantityOnHand
+      - status
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- sessionCookie: []
+- basicAuth: []

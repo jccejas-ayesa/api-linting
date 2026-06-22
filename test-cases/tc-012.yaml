@@ -1,0 +1,278 @@
+openapi: 3.0.3
+info:
+  title: Analytics API
+  version: 0.8.0
+  description: Analytics query API that exposes RPC-style endpoints and export workflows.
+  x-domain: analytics
+  x-business-capability: insight-generation
+  x-data-sensitivity: confidential
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://analytics.example.com/api/v1
+  description: Analytics gateway.
+tags:
+- name: Analytics
+  description: Analytics query operations.
+- name: Reports
+  description: Report export operations.
+paths:
+  /AnalyticsService/RunQuery:
+    post:
+      summary: Run query
+      operationId: AnalyticsService_RunQuery
+      responses:
+        '200':
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResult'
+              example:
+                requestId: qry-1001
+                status: completed
+                rows:
+                - metric_name: orders
+                  metric_value: 42
+      description: Executes an analytics query in an RPC-style endpoint.
+      tags:
+      - Analytics
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunQueryRequest'
+            example:
+              tenant_id: tenant-acme
+              query_name: orders-by-day
+              output_format: CSV
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+  /AnalyticsService/GetReport:
+    get:
+      summary: Get report
+      operationId: AnalyticsService_GetReport
+      responses:
+        '200':
+          description: Report response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+              example:
+                report_id: rpt-1001
+                state: ready
+                download_url: https://files.example.com/rpt-1001.csv
+      description: Fetches a generated analytics report.
+      tags:
+      - Reports
+      parameters:
+      - name: report_id
+        in: query
+        required: true
+        description: Report identifier passed as a query parameter.
+        schema:
+          type: string
+        example: rpt-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+  /reports/{reportId}/export:
+    post:
+      summary: Export report
+      operationId: export-report
+      responses:
+        '200':
+          description: Export request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+              example:
+                reportId: rpt-1001
+                state: queued
+                format: CSV
+      description: Exports a report to a requested file format.
+      tags:
+      - Reports
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Export request.
+              properties:
+                format:
+                  type: string
+                  description: File format.
+                  example: CSV
+                  enum:
+                  - CSV
+                  - JSON
+                  - CSV
+                include_headers:
+                  type: boolean
+                  description: Include CSV header row.
+                  example: true
+              additionalProperties: false
+              required:
+              - format
+            example:
+              format: CSV
+              include_headers: true
+      parameters:
+      - name: reportId
+        in: path
+        required: true
+        description: Report identifier.
+        schema:
+          type: string
+        example: rpt-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+components:
+  schemas:
+    RunQueryRequest:
+      type: object
+      description: RPC-style query request.
+      properties:
+        tenant_id:
+          type: string
+          description: Tenant id using snake case.
+          example: tenant-acme
+        query_name:
+          type: string
+          description: Predefined query name.
+          example: orders-by-day
+        output_format:
+          type: string
+          description: Requested output format.
+          example: CSV
+          enum:
+          - CSV
+          - JSON
+      additionalProperties: false
+      required:
+      - tenant_id
+      - query_name
+      - output_format
+    QueryResult:
+      type: object
+      description: Query result payload.
+      properties:
+        requestId:
+          type: string
+          description: Request id.
+          example: qry-1001
+        status:
+          type: string
+          description: Execution status.
+          example: completed
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              metric_name:
+                type: string
+                description: Metric name.
+                example: orders
+              metric_value:
+                type: integer
+                description: Metric value.
+                example: 42
+          description: Result rows.
+      additionalProperties: false
+      required:
+      - requestId
+      - status
+      - rows
+    Report:
+      type: object
+      description: Generated report.
+      properties:
+        report_id:
+          type: string
+          description: Report id using snake case.
+          example: rpt-1001
+        state:
+          type: string
+          description: Lifecycle state.
+          example: ready
+        download_url:
+          type: string
+          description: Download URL.
+          example: https://files.example.com/rpt-1001.csv
+      additionalProperties: false
+      required:
+      - report_id
+      - state
+      - download_url
+    ExportResult:
+      type: object
+      description: Export result.
+      properties:
+        reportId:
+          type: string
+          description: Report id.
+          example: rpt-1001
+        state:
+          type: string
+          description: Export state.
+          example: queued
+        format:
+          type: string
+          description: Export format.
+          example: CSV
+          enum:
+          - CSV
+          - JSON
+      additionalProperties: false
+      required:
+      - reportId
+      - state
+      - format
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message

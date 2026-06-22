@@ -1,0 +1,465 @@
+openapi: 3.0.3
+info:
+  title: Multi-tenant Platform API
+  version: 3.2.0
+  description: Platform API for tenant provisioning, user management, billing, and
+    settings.
+  x-domain: platform
+  x-business-capability: tenant-management
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://platform.example.com/api/v3
+  description: Primary platform endpoint.
+- url: http://platform-legacy.example.com/api/v3
+  description: Legacy platform edge.
+tags:
+- name: Tenants
+  description: Tenant lifecycle operations.
+- name: Users
+  description: Tenant user operations.
+- name: Billing
+  description: Billing account operations.
+- name: Settings
+  description: Tenant configuration operations.
+paths:
+  /tenants:
+    get:
+      summary: List tenants
+      operationId: list-tenants
+      responses:
+        '200':
+          description: Tenant collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tenant'
+              example:
+              - id: tenant-acme
+                name: Acme
+                status: active
+      description: Lists tenant accounts.
+      tags:
+      - Tenants
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - admin
+    post:
+      summary: Create tenant
+      operationId: create-tenant
+      responses:
+        '201':
+          description: Tenant created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+              example:
+                id: tenant-acme
+                name: Acme
+                status: active
+      description: Creates a tenant account.
+      tags:
+      - Tenants
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantInput'
+            example:
+              name: Acme
+              plan: enterprise
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - admin
+  /tenants/{tenantId}/users:
+    get:
+      summary: List tenant users
+      operationId: list-tenant-users
+      responses:
+        '200':
+          description: Tenant users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantUser'
+              example:
+              - id: usr-1001
+                email: alice@example.com
+                role: admin
+      description: Lists users for a tenant.
+      tags:
+      - Users
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        description: Tenant identifier.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Tenant-Id
+        in: header
+        required: true
+        description: Tenant context used for request scoping.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create tenant user
+      operationId: create-tenant-user
+      responses:
+        '201':
+          description: Tenant user created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantUser'
+              example:
+                id: usr-1001
+                email: alice@example.com
+                role: admin
+      description: Creates a user for a tenant.
+      tags:
+      - Users
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantUserInput'
+            example:
+              email: alice@example.com
+              role: admin
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        description: Tenant identifier.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /tenants/{tenantId}/billing/accounts:
+    get:
+      summary: List billing accounts
+      operationId: list-billing-accounts
+      responses:
+        '200':
+          description: Billing account collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BillingAccount'
+              example:
+              - id: bill-1001
+                currency: EUR
+                status: active
+      description: Lists billing accounts for a tenant.
+      tags:
+      - Billing
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        description: Tenant identifier.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /tenants/{tenantId}/settings:
+    put:
+      summary: Replace tenant settings
+      operationId: replace-tenant-settings
+      responses:
+        '200':
+          description: Tenant settings replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSettings'
+              example:
+                theme: dark
+                features:
+                  sso: true
+                  auditStreaming: false
+      description: Replaces tenant settings using a nested payload.
+      tags:
+      - Settings
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSettings'
+            example:
+              theme: dark
+              features:
+                sso: true
+                auditStreaming: false
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        description: Tenant identifier.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Tenant-Id
+        in: header
+        required: true
+        description: Tenant context used for request scoping.
+        schema:
+          type: string
+        example: tenant-acme
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Tenant:
+      type: object
+      description: Tenant account.
+      properties:
+        id:
+          type: string
+          description: Tenant id.
+          example: tenant-acme
+        name:
+          type: string
+          description: Tenant name.
+          example: Acme
+        status:
+          type: string
+          description: Tenant status.
+          example: active
+          enum:
+          - active
+          - suspended
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - status
+    TenantInput:
+      type: object
+      description: Tenant create payload.
+      properties:
+        name:
+          type: string
+          description: Tenant name.
+          example: Acme
+        plan:
+          type: string
+          description: Subscription plan.
+          example: enterprise
+          enum:
+          - basic
+          - pro
+          - enterprise
+      additionalProperties: false
+      required:
+      - name
+      - plan
+    TenantUser:
+      type: object
+      description: Tenant user.
+      properties:
+        id:
+          type: string
+          description: User id.
+          example: usr-1001
+        email:
+          type: string
+          description: Email address.
+          example: alice@example.com
+          format: email
+        role:
+          type: string
+          description: Tenant role.
+          example: admin
+          enum:
+          - admin
+          - member
+          - viewer
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - role
+    TenantUserInput:
+      type: object
+      description: Tenant user create payload.
+      properties:
+        email:
+          type: string
+          description: Email address.
+          example: alice@example.com
+          format: email
+        role:
+          type: string
+          description: Tenant role.
+          example: admin
+          enum:
+          - admin
+          - member
+          - viewer
+      additionalProperties: false
+      required:
+      - email
+      - role
+    BillingAccount:
+      type: object
+      description: Billing account.
+      properties:
+        id:
+          type: string
+          description: Billing account id.
+          example: bill-1001
+        currency:
+          type: string
+          description: Billing currency.
+          example: EUR
+        status:
+          type: string
+          description: Account status.
+          example: active
+          enum:
+          - active
+          - paused
+      additionalProperties: false
+      required:
+      - id
+      - currency
+      - status
+    TenantSettings:
+      type: object
+      description: Tenant settings.
+      properties:
+        theme:
+          type: string
+          description: Theme selection.
+          example: dark
+          enum:
+          - dark
+          - light
+        features:
+          type: object
+          description: Nested feature toggles.
+          properties:
+            sso:
+              type: boolean
+              description: SSO toggle.
+              example: true
+            auditStreaming:
+              type: boolean
+              description: Audit streaming toggle.
+              example: false
+      additionalProperties: false
+      required:
+      - theme
+      - features
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write
+  - admin
