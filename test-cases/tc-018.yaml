@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  title: Legacy API Modernization
+  version: v1
+  description: Legacy HTTP API being migrated to OpenAPI.
+  x-domain: modernization
+servers:
+- url: http://legacy.example.com/v1
+  description: Legacy production endpoint.
+paths:
+  /getUser:
+    post:
+      summary: Get User
+      operationId: GetUser
+      responses:
+        '200':
+          description: User payload.
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/LegacyUser'
+              example:
+                user_id: usr-1001
+                full_name: Alice Example
+                status: ACTIVE
+      description: Fetches a user through an RPC-style action endpoint.
+      tags:
+      - Legacy
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/xml:
+            schema:
+              type: object
+              description: Legacy request envelope.
+              properties:
+                user_id:
+                  type: string
+                  description: User id.
+                  example: usr-1001
+              additionalProperties: false
+              required:
+              - user_id
+            example:
+              user_id: usr-1001
+      parameters:
+      - name: api_key
+        in: query
+        required: false
+        description: Legacy key in query string.
+        schema:
+          type: string
+        example: legacy-key
+      security:
+      - basicAuth: []
+  /createOrder:
+    post:
+      summary: Create Order
+      operationId: CreateOrder
+      responses:
+        '200':
+          description: Order created.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/LegacyOrder'
+              example:
+                order_id: ord-9001
+                status: CREATED
+      description: Creates an order using a legacy action endpoint.
+      tags:
+      - Legacy
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Legacy order request.
+              properties:
+                customer_id:
+                  type: string
+                  description: Customer id.
+                  example: cus-1001
+                amount_total:
+                  type: number
+                  description: Order total.
+                  example: 100.0
+                  minimum: 0
+              additionalProperties: false
+              required:
+              - customer_id
+              - amount_total
+            example:
+              customer_id: cus-1001
+              amount_total: 100.0
+      parameters:
+      - name: api_key
+        in: query
+        required: false
+        description: Legacy key in query string.
+        schema:
+          type: string
+        example: legacy-key
+      security:
+      - basicAuth: []
+  /deleteOrder:
+    post:
+      summary: Delete Order
+      operationId: DeleteOrder
+      responses:
+        '200':
+          description: Delete result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LegacyOrder'
+              example:
+                order_id: ord-9001
+                status: DELETED
+      description: Deletes an order through a POST endpoint.
+      tags:
+      - Legacy
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Delete order request.
+              properties:
+                order_id:
+                  type: string
+                  description: Order id.
+                  example: ord-9001
+              additionalProperties: false
+              required:
+              - order_id
+            example:
+              order_id: ord-9001
+      parameters:
+      - name: api_key
+        in: query
+        required: false
+        description: Legacy key in query string.
+        schema:
+          type: string
+        example: legacy-key
+      security:
+      - basicAuth: []
+  /HealthCheck:
+    get:
+      summary: Health Check
+      operationId: HealthCheck
+      responses:
+        '200':
+          description: Legacy health result.
+          content:
+            text/plain: {}
+      tags:
+      - Legacy
+      security: []
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    LegacyUser:
+      type: object
+      description: Legacy user payload.
+      properties:
+        user_id:
+          type: string
+          description: User id using snake case.
+          example: usr-1001
+        full_name:
+          type: string
+          description: Full name using snake case.
+          example: Alice Example
+        status:
+          type: string
+          description: Legacy status enum.
+          example: ACTIVE
+          enum:
+          - ACTIVE
+          - INACTIVE
+      additionalProperties: false
+      required:
+      - user_id
+      - full_name
+      - status
+    LegacyOrder:
+      type: object
+      description: Legacy order payload.
+      properties:
+        order_id:
+          type: string
+          description: Order id using snake case.
+          example: ord-9001
+        status:
+          type: string
+          description: Legacy order status.
+          example: CREATED
+          enum:
+          - CREATED
+          - DELETED
+      additionalProperties: false
+      required:
+      - order_id
+      - status
+security:
+- basicAuth: []

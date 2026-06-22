@@ -1,0 +1,349 @@
+openapi: 3.0.3
+info:
+  title: Event System API
+  version: 1.4.0
+  description: Event ingestion and subscription management API with webhook callbacks.
+  x-domain: events
+  x-business-capability: event-distribution
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://events.example.com/api/v1
+  description: Event platform endpoint.
+tags:
+- name: Events
+  description: Event ingestion and retrieval.
+- name: Subscriptions
+  description: Webhook subscription operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /events:
+    get:
+      summary: List events
+      operationId: list-events
+      responses:
+        '200':
+          description: Event collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+              example:
+              - id: evt-9001
+                topic: orders.created
+                status: received
+      description: Lists recently accepted events.
+      tags:
+      - Events
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+    post:
+      summary: Publish event
+      operationId: publish-event
+      responses:
+        '202':
+          description: Event accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              example:
+                id: evt-9001
+                topic: orders.created
+                status: received
+      description: Publishes a business event into the event bus.
+      tags:
+      - Events
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInput'
+            example:
+              topic: orders.created
+              payload:
+                orderId: ord-2001
+              callbackUrl: http://consumer.example.com/hooks/events
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /events/{eventId}/subscriptions:
+    post:
+      summary: Create subscription
+      operationId: create-event-subscription
+      responses:
+        '201':
+          description: Subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+              example:
+                id: sub-3001
+                eventId: evt-9001
+                callbackUrl: http://consumer.example.com/hooks/events
+      description: Registers a webhook subscription for a specific event stream.
+      tags:
+      - Subscriptions
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionInput'
+            example:
+              callbackUrl: http://consumer.example.com/hooks/events
+              secret: demo-secret
+      parameters:
+      - name: eventId
+        in: path
+        required: true
+        description: Event identifier.
+        schema:
+          type: string
+        example: evt-9001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+      callbacks:
+        deliveryResult:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                description: Webhook status callback.
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      description: Webhook event notification.
+                      properties:
+                        eventId:
+                          type: string
+                          description: Event identifier.
+                          example: evt-9001
+                        status:
+                          type: string
+                          description: Dispatch status.
+                          example: delivered
+                      additionalProperties: false
+                      required:
+                      - eventId
+                      - status
+                    example:
+                      eventId: evt-9001
+                      status: delivered
+              responses:
+                '200':
+                  description: Consumer acknowledged the callback.
+  /subscriptions/{subscriptionId}:
+    delete:
+      summary: Delete subscription
+      operationId: delete-subscription
+      responses:
+        '204':
+          description: Subscription deleted.
+      description: Removes a webhook subscription.
+      tags:
+      - Subscriptions
+      parameters:
+      - name: subscriptionId
+        in: path
+        required: true
+        description: Subscription identifier.
+        schema:
+          type: string
+        example: sub-3001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Event:
+      type: object
+      description: Event envelope.
+      properties:
+        id:
+          type: string
+          description: Event id.
+          example: evt-9001
+        topic:
+          type: string
+          description: Event topic.
+          example: orders.created
+        status:
+          type: string
+          description: Dispatch state.
+          example: received
+          enum:
+          - received
+          - processing
+          - delivered
+      additionalProperties: false
+      required:
+      - id
+      - topic
+      - status
+    EventInput:
+      type: object
+      description: Event publish payload.
+      properties:
+        topic:
+          type: string
+          description: Event topic.
+          example: orders.created
+        payload:
+          type: object
+          description: Arbitrary event body.
+          additionalProperties: true
+        callbackUrl:
+          type: string
+          description: Optional callback URL.
+          example: http://consumer.example.com/hooks/events
+      additionalProperties: false
+      required:
+      - topic
+      - payload
+    Subscription:
+      type: object
+      description: Subscription configuration.
+      properties:
+        id:
+          type: string
+          description: Subscription id.
+          example: sub-3001
+        eventId:
+          type: string
+          description: Event id.
+          example: evt-9001
+        callbackUrl:
+          type: string
+          description: Webhook destination.
+          example: http://consumer.example.com/hooks/events
+      additionalProperties: false
+      required:
+      - id
+      - eventId
+      - callbackUrl
+    SubscriptionInput:
+      type: object
+      description: Subscription create payload.
+      properties:
+        callbackUrl:
+          type: string
+          description: Webhook destination.
+          example: http://consumer.example.com/hooks/events
+        secret:
+          type: string
+          description: Signing secret.
+          example: demo-secret
+      additionalProperties: false
+      required:
+      - callbackUrl
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- bearerAuth: []

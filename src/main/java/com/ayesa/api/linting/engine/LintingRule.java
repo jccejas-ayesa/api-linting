@@ -21,5 +21,12 @@ public interface LintingRule {
      */
     String getRulesetId();
 
+    /**
+     * Returns all rulesets this rule belongs to.
+     */
+    default List<String> getRulesetIds() {
+        return List.of(getRulesetId());
+    }
+
     List<LintingIssue> apply(OpenAPI openAPI);
 }

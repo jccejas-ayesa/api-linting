@@ -7,6 +7,18 @@ spring:
   threads:
     virtual:
       enabled: true
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
 
 springdoc:
   api-docs:
@@ -17,3 +29,18 @@ springdoc:
 
 linting:
   max-file-size: 5MB
+
+api-linting:
+  rulesets:
+    openapi-best-practices: enabled
+    api-documentation-best-practices: enabled
+    authentication-security-best-practices: enabled
+    https-enforcement: enabled
+    required-examples: enabled
+    api-catalog-information-best-practices: enabled
+    datagraph-best-practices: enabled
+    grpc-best-practices: enabled
+    asyncapi-best-practices: enabled
+    mule-api-management-best-practices: enabled
+    anypoint-best-practices: enabled
+    owasp-api-security-top-10: enabled

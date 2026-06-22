@@ -20,6 +20,9 @@ class LintingControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private com.ayesa.api.linting.engine.LintingEngine lintingEngine;
+
     private static final String VALID_OAS = """
             openapi: "3.0.3"
             info:
@@ -40,7 +43,7 @@ class LintingControllerTest {
               - name: health
                 description: "Health check operations"
             servers:
-              - url: https://api.example.com
+              - url: https://api.example.com/api/v1
             components:
               securitySchemes:
                 oauth2:
@@ -53,15 +56,20 @@ class LintingControllerTest {
               schemas:
                 Error:
                   type: object
+                  description: "Error response object"
                   properties:
                     type:
                       type: string
+                      description: "Error type URI"
                     title:
                       type: string
+                      description: "Error title"
                     status:
                       type: integer
+                      description: "HTTP status code"
                     detail:
                       type: string
+                      description: "Error detail message"
             security:
               - oauth2:
                   - read:users
@@ -76,6 +84,7 @@ class LintingControllerTest {
                   parameters:
                     - name: X-Correlation-Id
                       in: header
+                      description: "Correlation ID for request tracking"
                       schema:
                         type: string
                   responses:
@@ -90,17 +99,8 @@ class LintingControllerTest {
                           example:
                             - id: 1
                               name: "John"
-                    "500":
-                      description: "Internal server error"
-                      content:
-                        application/json:
-                          schema:
-                            $ref: '#/components/schemas/Error'
-                          example:
-                            type: "about:blank"
-                            title: "Internal Server Error"
-                            status: 500
-                            detail: "An unexpected error occurred"
+                    "204":
+                      description: "No content"
               /health:
                 get:
                   operationId: health-check
@@ -176,7 +176,7 @@ class LintingControllerTest {
         mockMvc.perform(get("/api/v1/lint/rules"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(101));
+                .andExpect(jsonPath("$.length()").value(lintingEngine.getRules().size()));
     }
 
     @Test

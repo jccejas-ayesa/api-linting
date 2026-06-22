@@ -34,6 +34,11 @@ public class DescriptionRule implements LintingRule {
     }
 
     @Override
+    public List<String> getRulesetIds() {
+        return List.of(getRulesetId(), "owasp-api-security-top-10");
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

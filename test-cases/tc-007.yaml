@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Status API
+  version: 0.9.0
+  description: Status lookup API used by support tooling.
+  x-domain: support
+  x-business-capability: status-reference-data
+  x-data-sensitivity: internal
+servers:
+- url: https://api.example.com/api/v1
+  description: Primary API endpoint.
+tags: []
+paths:
+  /statuses:
+    get:
+      summary: List statuses
+      operationId: list-statuses
+      responses:
+        '200':
+          description: StatusRecord collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusRecord'
+                description: List of statuses.
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create statusrecord
+      operationId: create-statusrecord
+      responses:
+        '201':
+          description: StatusRecord created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusRecord'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        description: Payload used to create a statusrecord.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRecordCreateRequest'
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /statuses/{statusRecordId}:
+    get:
+      summary: Get statusrecord
+      operationId: get-statusrecord-by-id
+      responses:
+        '200':
+          description: StatusRecord response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusRecord'
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: statusRecordId
+        in: path
+        required: true
+        description: Identifier for the target statusrecord.
+        schema:
+          type: string
+        example: sts-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    patch:
+      summary: Update statusrecord
+      operationId: update-statusrecord
+      responses:
+        '200':
+          description: StatusRecord response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusRecord'
+        '400':
+          description: Standard error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        description: Fields to update on the statusrecord.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRecordCreateRequest'
+      parameters:
+      - name: statusRecordId
+        in: path
+        required: true
+        description: Identifier for the target statusrecord.
+        schema:
+          type: string
+        example: sts-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+    delete:
+      summary: Delete statusrecord
+      operationId: delete-statusrecord
+      responses:
+        '204':
+          description: Resource deleted.
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: statusRecordId
+        in: path
+        required: true
+        description: Identifier for the target statusrecord.
+        schema:
+          type: string
+        example: sts-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    StatusRecord:
+      type: object
+      description: StatusRecord representation.
+      properties:
+        id:
+          type: string
+          description: Status identifier.
+          example: sts-1001
+        code:
+          type: string
+          description: Short status code.
+          example: READY
+        label:
+          type: string
+          description: Display label.
+          example: Ready
+        enabled:
+          type: boolean
+          description: Enablement flag.
+          example: true
+      additionalProperties: false
+      required:
+      - id
+      - code
+      - label
+      - enabled
+    StatusRecordCreateRequest:
+      type: object
+      description: Payload used to create a statusrecord.
+      properties:
+        code:
+          type: string
+          description: Short status code.
+          example: READY
+        label:
+          type: string
+          description: Display label.
+          example: Ready
+        enabled:
+          type: boolean
+          description: Enablement flag.
+          example: true
+      additionalProperties: false
+      required:
+      - code
+      - label
+      - enabled
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

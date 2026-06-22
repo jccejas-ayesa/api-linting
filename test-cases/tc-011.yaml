@@ -1,0 +1,363 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API
+  version: 1.7.0
+  description: Notification delivery API for messages, channels, and templates.
+  x-domain: messaging
+  x-business-capability: notification-delivery
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://notify.example.com/api/v1
+  description: Notification endpoint.
+tags:
+- name: Notifications
+  description: Message delivery operations.
+- name: Channels
+  description: Channel validation operations.
+- name: Templates
+  description: Template operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /notifications:
+    get:
+      summary: List notifications
+      operationId: list-notifications
+      responses:
+        '200':
+          description: Notification collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+              example:
+              - id: ntf-1001
+                channel: email
+                status: queued
+      description: Returns notification jobs.
+      tags:
+      - Notifications
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+    post:
+      summary: Create notification
+      operationId: create-notification
+      responses:
+        '201':
+          description: Notification created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+              example:
+                id: ntf-1001
+                channel: email
+                status: queued
+      description: Queues a new outbound notification.
+      tags:
+      - Notifications
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationInput'
+            example:
+              channel: email
+              recipient: alice@example.com
+              templateId: tpl-1001
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /channels/email/test:
+    post:
+      summary: Test email channel
+      operationId: test-email-channel
+      responses:
+        '200':
+          description: Channel test result.
+          content:
+            text/plain: {}
+      description: Runs a basic connectivity test for the email channel.
+      tags:
+      - Channels
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Email channel test payload.
+              properties:
+                recipient:
+                  type: string
+                  description: Recipient email.
+                  example: alice@example.com
+                  format: email
+              additionalProperties: false
+              required:
+              - recipient
+            example:
+              recipient: alice@example.com
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /templates/{templateId}:
+    get:
+      summary: Get template
+      operationId: get-template-by-id
+      responses:
+        '200':
+          description: Template response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+              example:
+                id: tpl-1001
+                name: welcome-email
+                channel: email
+      description: Retrieves a notification template.
+      tags:
+      - Templates
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        description: Template identifier.
+        schema:
+          type: string
+        example: tpl-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+    delete:
+      summary: Delete template
+      operationId: delete-template
+      responses:
+        '400':
+          description: Deletion blocked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: template_in_use
+                message: Template is in use.
+        default:
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: unexpected_error
+                message: Unexpected server error.
+      description: Deletes a notification template.
+      tags:
+      - Templates
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        description: Template identifier.
+        schema:
+          type: string
+        example: tpl-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Notification:
+      type: object
+      description: Notification job.
+      properties:
+        id:
+          type: string
+          description: Notification id.
+          example: ntf-1001
+        channel:
+          type: string
+          description: Delivery channel.
+          example: email
+          enum:
+          - email
+          - sms
+          - push
+        status:
+          type: string
+          description: Delivery state.
+          example: queued
+          enum:
+          - queued
+          - sent
+          - failed
+      additionalProperties: false
+      required:
+      - id
+      - channel
+      - status
+    NotificationInput:
+      type: object
+      description: Notification create payload.
+      properties:
+        channel:
+          type: string
+          description: Delivery channel.
+          example: email
+          enum:
+          - email
+          - sms
+          - push
+        recipient:
+          type: string
+          description: Target recipient.
+          example: alice@example.com
+        templateId:
+          type: string
+          description: Template id.
+          example: tpl-1001
+      additionalProperties: false
+      required:
+      - channel
+      - recipient
+      - templateId
+    Template:
+      type: object
+      description: Notification template.
+      properties:
+        id:
+          type: string
+          description: Template id.
+          example: tpl-1001
+        name:
+          type: string
+          description: Template name.
+          example: welcome-email
+        channel:
+          type: string
+          description: Delivery channel.
+          example: email
+          enum:
+          - email
+          - sms
+          - push
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - channel
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- bearerAuth: []

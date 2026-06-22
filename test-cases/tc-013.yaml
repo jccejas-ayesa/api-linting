@@ -1,0 +1,390 @@
+openapi: 3.0.3
+info:
+  title: Configuration Service API
+  version: 2.1.0
+  description: Configuration registry API with versioned documents and complex schema
+    composition.
+  x-domain: platform
+  x-business-capability: configuration-management
+  x-data-sensitivity: internal
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+- url: https://config.example.com/api/v2
+  description: Configuration service endpoint.
+tags:
+- name: Configs
+  description: Configuration document operations.
+- name: Versions
+  description: Configuration version operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /configs:
+    get:
+      summary: List configs
+      operationId: list-configs
+      responses:
+        '200':
+          description: Config collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Config'
+              example:
+              - id: cfg-1001
+                name: checkout-settings
+                environment: prod
+      description: Lists configuration documents.
+      tags:
+      - Configs
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    post:
+      summary: Create config
+      operationId: create-config
+      responses:
+        '201':
+          description: Config created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+              example:
+                id: cfg-1001
+                name: checkout-settings
+                environment: prod
+      description: Creates a new configuration document.
+      tags:
+      - Configs
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigInput'
+            example:
+              name: checkout-settings
+              environment: prod
+              payload:
+                featureFlags:
+                  quickCheckout: true
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /configs/{configId}:
+    get:
+      summary: Get config
+      operationId: get-config-by-id
+      responses:
+        '200':
+          description: Config response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+              example:
+                id: cfg-1001
+                name: checkout-settings
+                environment: prod
+      description: Retrieves a configuration document.
+      tags:
+      - Configs
+      parameters:
+      - name: configId
+        in: path
+        required: true
+        description: Configuration identifier.
+        schema:
+          type: string
+        example: cfg-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+    put:
+      summary: Replace config
+      operationId: replace-config
+      responses:
+        '200':
+          description: Config replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+              example:
+                id: cfg-1001
+                name: checkout-settings
+                environment: prod
+      description: Replaces an existing configuration document.
+      tags:
+      - Configs
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigInput'
+            example:
+              name: checkout-settings
+              environment: prod
+              payload:
+                featureFlags:
+                  quickCheckout: true
+      parameters:
+      - name: configId
+        in: path
+        required: true
+        description: Configuration identifier.
+        schema:
+          type: string
+        example: cfg-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - write
+  /configs/{configId}/versions/{versionId}:
+    get:
+      summary: Get config version
+      operationId: get-config-version
+      responses:
+        '200':
+          description: Config version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigVersion'
+              example:
+                versionId: v5
+                status: active
+                payload:
+                  featureFlags:
+                    quickCheckout: true
+      description: Gets a specific configuration version.
+      tags:
+      - Versions
+      parameters:
+      - name: configId
+        in: path
+        required: true
+        description: Configuration identifier.
+        schema:
+          type: string
+        example: cfg-1001
+      - name: versionId
+        in: path
+        required: true
+        description: Version identifier.
+        schema:
+          type: string
+        example: v5
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    ConfigBase:
+      type: object
+      description: Base configuration metadata.
+      properties:
+        name:
+          type: string
+          description: Configuration name.
+          example: checkout-settings
+        environment:
+          type: string
+          description: Deployment environment.
+          example: prod
+        description:
+          type: string
+          description: Optional description.
+          example: Controls checkout capabilities.
+          nullable: true
+      additionalProperties: false
+      required:
+      - name
+      - environment
+    ConfigInput:
+      allOf:
+      - $ref: '#/components/schemas/ConfigBase'
+      - type: object
+        description: Configuration payload wrapper.
+        properties:
+          payload:
+            type: object
+            description: Nested configuration payload.
+            additionalProperties: true
+        additionalProperties: false
+        required:
+        - payload
+    Config:
+      allOf:
+      - type: object
+        description: Configuration identifier wrapper.
+        properties:
+          id:
+            type: string
+            description: Configuration id.
+            example: cfg-1001
+        additionalProperties: false
+        required:
+        - id
+      - $ref: '#/components/schemas/ConfigInput'
+    ConfigVersion:
+      type: object
+      description: Configuration version snapshot.
+      properties:
+        versionId:
+          type: string
+          description: Version id.
+          example: v5
+        status:
+          type: string
+          description: Version status.
+          example: active
+          enum:
+          - draft
+          - active
+          - retired
+        payload:
+          type: object
+          description: Nested version payload.
+          properties:
+            featureFlags:
+              type: object
+              properties:
+                quickCheckout:
+                  type: boolean
+                  description: Quick checkout toggle.
+                  example: true
+                upsellBanner:
+                  type: boolean
+                  description: Upsell banner toggle.
+                  example: false
+      additionalProperties: false
+      required:
+      - versionId
+      - status
+      - payload
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - write

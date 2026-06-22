@@ -1,0 +1,550 @@
+openapi: 3.0.3
+info:
+  title: Compliance-Critical Finance API
+  version: 2.5.0
+  description: Finance API for regulated account, payment, and transaction workflows
+    with strong governance metadata.
+  x-domain: finance
+  x-business-capability: regulated-payments
+  x-data-sensitivity: restricted
+  contact:
+    name: API Governance Team
+    email: api-governance@example.com
+    url: https://developer.example.com/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  x-audit-tier: tier-1
+  x-regulations:
+  - PSD2
+  - SOX
+  - PCI-DSS
+servers:
+- url: https://finance.example.com/api/v2
+  description: Regulated finance endpoint.
+tags:
+- name: Accounts
+  description: Account information operations.
+- name: Payments
+  description: Payment lifecycle operations.
+- name: Transactions
+  description: Transaction query operations.
+- name: Health
+  description: Operational monitoring.
+paths:
+  /accounts:
+    get:
+      summary: List accounts
+      operationId: list-accounts
+      responses:
+        '200':
+          description: Account collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+              example:
+              - id: acc-1001
+                currency: EUR
+                status: active
+                availableBalance: 2450.25
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+        '429':
+          description: Too many requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: rate_limited
+                message: Too many requests.
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+      description: Lists customer financial accounts with pagination support.
+      tags:
+      - Accounts
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /accounts/{accountId}:
+    get:
+      summary: Get account
+      operationId: get-account-by-id
+      responses:
+        '200':
+          description: Account response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+              example:
+                id: acc-1001
+                currency: EUR
+                status: active
+                availableBalance: 2450.25
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+        '404':
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Account not found.
+      description: Retrieves a single regulated account.
+      tags:
+      - Accounts
+      parameters:
+      - name: accountId
+        in: path
+        required: true
+        description: Account identifier.
+        schema:
+          type: string
+        example: acc-1001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /payments:
+    post:
+      summary: Create payment
+      operationId: create-payment
+      responses:
+        '201':
+          description: Payment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInstruction'
+              example:
+                id: pay-2001
+                debtorAccountId: acc-1001
+                creditorAccountId: acc-2001
+                status: pending
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: validation_error
+                message: Payload validation failed.
+        '429':
+          description: Too many requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: rate_limited
+                message: Too many requests.
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+      description: Initiates a regulated payment with explicit debtor and creditor
+        account references.
+      tags:
+      - Payments
+      requestBody:
+        required: true
+        description: Request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInstructionInput'
+            example:
+              debtorAccountId: acc-1001
+              creditorAccountId: acc-2001
+              amount: 120.5
+              currency: EUR
+              executionDate: '2026-06-23'
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+  /payments/{paymentId}:
+    get:
+      summary: Get payment
+      operationId: get-payment-by-id
+      responses:
+        '200':
+          description: Payment response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInstruction'
+              example:
+                id: pay-2001
+                debtorAccountId: acc-1001
+                creditorAccountId: acc-2001
+                status: pending
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+        '404':
+          description: Payment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: not_found
+                message: Payment not found.
+      description: Retrieves a payment instruction and its settlement status.
+      tags:
+      - Payments
+      parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment identifier.
+        schema:
+          type: string
+        example: pay-2001
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - payments
+  /transactions:
+    get:
+      summary: List transactions
+      operationId: list-transactions
+      responses:
+        '200':
+          description: Transaction collection.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+              example:
+              - id: txn-1001
+                accountId: acc-1001
+                amount: -120.5
+                bookingDate: '2026-06-22'
+          headers:
+            X-Rate-Limit-Limit:
+              description: Total requests allowed per minute.
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: Requests left in the current window.
+              schema:
+                type: integer
+            Retry-After:
+              description: Retry delay in seconds when throttled.
+              schema:
+                type: integer
+      description: Lists booked transactions across customer accounts.
+      tags:
+      - Transactions
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security:
+      - oauth2:
+        - read
+  /health:
+    get:
+      summary: Check service health
+      operationId: get-health-status
+      responses:
+        '200':
+          description: Health check succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Health response payload.
+                properties:
+                  status:
+                    type: string
+                    description: Overall status.
+                    example: UP
+                  time:
+                    type: string
+                    description: Evaluation timestamp.
+                    example: '2026-06-22T11:36:48Z'
+                    format: date-time
+                additionalProperties: false
+                required:
+                - status
+                - time
+              example:
+                status: UP
+                time: '2026-06-22T11:36:48Z'
+      description: Returns liveness and readiness indicators for monitoring systems.
+      tags:
+      - Health
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        description: Trace identifier used to correlate requests across services.
+        schema:
+          type: string
+        example: TRACE-20260622-001
+      security: []
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth/authorize
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            read: Read access to API resources.
+            write: Write access to API resources.
+            payments: Manage payments and financial workflows.
+            admin: Administrative access for platform operators.
+  schemas:
+    Account:
+      type: object
+      description: Regulated account view.
+      properties:
+        id:
+          type: string
+          description: Account identifier.
+          example: acc-1001
+        currency:
+          type: string
+          description: ISO currency code.
+          example: EUR
+        status:
+          type: string
+          description: Account status.
+          example: active
+          enum:
+          - active
+          - blocked
+        availableBalance:
+          type: number
+          description: Available balance.
+          example: 2450.25
+      additionalProperties: false
+      required:
+      - id
+      - currency
+      - status
+      - availableBalance
+    PaymentInstruction:
+      type: object
+      description: Payment instruction.
+      properties:
+        id:
+          type: string
+          description: Payment identifier.
+          example: pay-2001
+        debtorAccountId:
+          type: string
+          description: Debtor account id.
+          example: acc-1001
+        creditorAccountId:
+          type: string
+          description: Creditor account id.
+          example: acc-2001
+        status:
+          type: string
+          description: Instruction status.
+          example: pending
+          enum:
+          - pending
+          - settled
+          - rejected
+      additionalProperties: false
+      required:
+      - id
+      - debtorAccountId
+      - creditorAccountId
+      - status
+    PaymentInstructionInput:
+      type: object
+      description: Payment creation payload.
+      properties:
+        debtorAccountId:
+          type: string
+          description: Debtor account id.
+          example: acc-1001
+        creditorAccountId:
+          type: string
+          description: Creditor account id.
+          example: acc-2001
+        amount:
+          type: number
+          description: Transfer amount.
+          example: 120.5
+          minimum: 0.01
+        currency:
+          type: string
+          description: ISO currency code.
+          example: EUR
+        executionDate:
+          type: string
+          description: Execution date.
+          example: '2026-06-23'
+          format: date
+      additionalProperties: false
+      required:
+      - debtorAccountId
+      - creditorAccountId
+      - amount
+      - currency
+      - executionDate
+    Transaction:
+      type: object
+      description: Booked transaction.
+      properties:
+        id:
+          type: string
+          description: Transaction id.
+          example: txn-1001
+        accountId:
+          type: string
+          description: Account id.
+          example: acc-1001
+        amount:
+          type: number
+          description: Signed amount.
+          example: -120.5
+        bookingDate:
+          type: string
+          description: Booking date.
+          example: '2026-06-22'
+          format: date
+      additionalProperties: false
+      required:
+      - id
+      - accountId
+      - amount
+      - bookingDate
+    Error:
+      type: object
+      description: Standard API error payload.
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          example: resource_not_found
+        message:
+          type: string
+          description: Human-readable error summary.
+          example: The requested resource was not found.
+        correlationId:
+          type: string
+          description: Request trace identifier.
+          example: TRACE-20260622-001
+      additionalProperties: false
+      required:
+      - code
+      - message
+security:
+- oauth2:
+  - read
+  - payments
