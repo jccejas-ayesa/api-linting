@@ -25,12 +25,17 @@ public class ExamplesRequiredRule implements LintingRule {
 
     @Override
     public String getRuleId() {
-        return "examples-required";
+        return "provide-examples-on-payloads";
     }
 
     @Override
     public String getDescription() {
-        return "Validates that request and response schemas include examples for consumer guidance";
+        return "Request and response payloads must include examples";
+    }
+
+    @Override
+    public String getRulesetId() {
+        return "required-examples";
     }
 
     @Override

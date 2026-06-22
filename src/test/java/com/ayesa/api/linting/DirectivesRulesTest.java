@@ -151,7 +151,7 @@ class DirectivesRulesTest {
                 """;
 
         LintingResult result = lintingService.analyze(spec);
-        assertTrue(hasRuleIssue(result, "examples-required"));
+        assertTrue(hasRuleIssue(result, "provide-examples-on-payloads"));
     }
 
     // === Integration Rules ===

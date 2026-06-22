@@ -27,6 +27,11 @@ public class HttpsRequiredRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "https-enforcement";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

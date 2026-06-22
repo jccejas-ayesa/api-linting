@@ -37,8 +37,16 @@ class LintingServiceTest {
                   contact:
                     name: "Dev"
                     email: "dev@test.com"
+                  license:
+                    name: "MIT"
+                    url: "https://opensource.org/licenses/MIT"
                   x-domain: "testing"
                   x-business-capability: "test-cap"
+                tags:
+                  - name: items
+                    description: "Item operations"
+                  - name: health
+                    description: "Health operations"
                 servers:
                   - url: https://api.test.com
                 components:
@@ -68,7 +76,9 @@ class LintingServiceTest {
                 paths:
                   /v1/items:
                     get:
-                      operationId: listItems
+                      operationId: list-items
+                      tags:
+                        - items
                       summary: "List items"
                       description: "Returns all items"
                       parameters:
@@ -100,7 +110,9 @@ class LintingServiceTest {
                                 detail: "Unexpected"
                   /health:
                     get:
-                      operationId: health
+                      operationId: health-check
+                      tags:
+                        - health
                       summary: "Health"
                       description: "Health check"
                       responses:

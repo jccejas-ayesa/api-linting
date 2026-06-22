@@ -2,10 +2,13 @@ package com.ayesa.api.linting.controller;
 
 import com.ayesa.api.linting.engine.LintingEngine;
 import com.ayesa.api.linting.engine.LintingRule;
+import com.ayesa.api.linting.engine.RulesetCatalog;
 import com.ayesa.api.linting.model.LintingRequest;
 import com.ayesa.api.linting.model.LintingResult;
+import com.ayesa.api.linting.model.Ruleset;
 import com.ayesa.api.linting.service.LintingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -14,10 +17,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/lint")
@@ -33,26 +38,66 @@ public class LintingController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Analyze an OpenAPI specification", description = "Parses and lints an OpenAPI specification, returning a detailed report of issues found")
-    public ResponseEntity<LintingResult> analyze(@Valid @RequestBody LintingRequest request) {
-        LintingResult result = lintingService.analyze(request.content());
+    @Operation(summary = "Analyze an OpenAPI specification",
+            description = "Parses and lints an OpenAPI specification. Optionally filter by rulesets.")
+    public ResponseEntity<LintingResult> analyze(
+            @Valid @RequestBody LintingRequest request,
+            @Parameter(description = "Comma-separated ruleset IDs to apply (empty = all)")
+            @RequestParam(required = false) List<String> rulesets) {
+        LintingResult result = lintingService.analyze(request.content(), rulesets);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping(value = "/raw", consumes = {MediaType.TEXT_PLAIN_VALUE, "application/yaml", "application/x-yaml"},
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Analyze a raw OAS document", description = "Accepts raw YAML or JSON content directly and returns the linting report")
-    public ResponseEntity<LintingResult> analyzeRaw(@RequestBody String content) {
-        LintingResult result = lintingService.analyze(content);
+    @Operation(summary = "Analyze a raw OAS document",
+            description = "Accepts raw YAML or JSON content directly. Optionally filter by rulesets.")
+    public ResponseEntity<LintingResult> analyzeRaw(
+            @RequestBody String content,
+            @Parameter(description = "Comma-separated ruleset IDs to apply (empty = all)")
+            @RequestParam(required = false) List<String> rulesets) {
+        LintingResult result = lintingService.analyze(content, rulesets);
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/rulesets")
+    @Operation(summary = "List available rulesets",
+            description = "Returns all rulesets with their rules, descriptions, and tags")
+    public ResponseEntity<List<Ruleset>> listRulesets() {
+        Map<String, List<LintingRule>> rulesByRuleset = lintingEngine.getRules().stream()
+                .collect(Collectors.groupingBy(LintingRule::getRulesetId));
+
+        List<Ruleset> rulesets = RulesetCatalog.RULESETS.values().stream()
+                .map(info -> {
+                    List<LintingRule> rules = rulesByRuleset.getOrDefault(info.id(), List.of());
+                    return new Ruleset(
+                            info.id(),
+                            info.name(),
+                            info.description(),
+                            info.tags(),
+                            rules.size(),
+                            rules.stream()
+                                    .map(r -> new Ruleset.RuleInfo(r.getRuleId(), r.getDescription()))
+                                    .toList()
+                    );
+                })
+                .filter(rs -> rs.ruleCount() > 0)
+                .toList();
+
+        return ResponseEntity.ok(rulesets);
+    }
+
     @GetMapping("/rules")
-    @Operation(summary = "List available linting rules", description = "Returns all configured linting rules with their IDs and descriptions")
-    public ResponseEntity<List<Map<String, String>>> listRules() {
+    @Operation(summary = "List available linting rules",
+            description = "Returns all rules with their IDs, descriptions, and ruleset membership")
+    public ResponseEntity<List<Map<String, String>>> listRules(
+            @Parameter(description = "Filter by ruleset ID")
+            @RequestParam(required = false) String ruleset) {
         List<Map<String, String>> rules = lintingEngine.getRules().stream()
+                .filter(rule -> ruleset == null || rule.getRulesetId().equals(ruleset))
                 .map(rule -> Map.of(
                         "ruleId", rule.getRuleId(),
+                        "rulesetId", rule.getRulesetId(),
                         "description", rule.getDescription()
                 ))
                 .toList();

@@ -40,6 +40,11 @@ public class RateLimitDocumentedRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "mule-api-management-best-practices";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

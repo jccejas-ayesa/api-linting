@@ -35,6 +35,11 @@ public class ParameterNamingConventionRule implements LintingRule {
     }
 
     @Override
+    public String getRulesetId() {
+        return "openapi-best-practices";
+    }
+
+    @Override
     public List<LintingIssue> apply(OpenAPI openAPI) {
         List<LintingIssue> issues = new ArrayList<>();
 

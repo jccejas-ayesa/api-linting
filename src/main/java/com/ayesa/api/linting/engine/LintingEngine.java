@@ -18,13 +18,25 @@ public class LintingEngine {
 
     public LintingEngine(List<LintingRule> rules) {
         this.rules = rules;
-        log.info("Linting engine initialized with {} rules", rules.size());
+        log.info("Linting engine initialized with {} rules across {} rulesets",
+                rules.size(),
+                rules.stream().map(LintingRule::getRulesetId).distinct().count());
     }
 
     public List<LintingIssue> analyze(OpenAPI openAPI) {
+        return analyze(openAPI, null);
+    }
+
+    public List<LintingIssue> analyze(OpenAPI openAPI, List<String> rulesetIds) {
+        List<LintingRule> activeRules = (rulesetIds == null || rulesetIds.isEmpty())
+                ? rules
+                : rules.stream()
+                .filter(r -> rulesetIds.contains(r.getRulesetId()))
+                .toList();
+
         List<LintingIssue> allIssues = new ArrayList<>();
 
-        for (LintingRule rule : rules) {
+        for (LintingRule rule : activeRules) {
             try {
                 List<LintingIssue> issues = rule.apply(openAPI);
                 allIssues.addAll(issues);
