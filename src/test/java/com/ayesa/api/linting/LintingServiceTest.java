@@ -1,12 +1,13 @@
 package com.ayesa.api.linting;
 
 import com.ayesa.api.linting.engine.LintingEngine;
-import com.ayesa.api.linting.model.LintingIssue;
 import com.ayesa.api.linting.model.LintingResult;
 import com.ayesa.api.linting.service.LintingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +49,7 @@ class LintingServiceTest {
                   - name: health
                     description: "Health operations"
                 servers:
-                  - url: https://api.test.com
+                  - url: https://api.test.com/api/v1
                 components:
                   securitySchemes:
                     oauth2:
@@ -61,15 +62,20 @@ class LintingServiceTest {
                   schemas:
                     Error:
                       type: object
+                      description: "Error response object"
                       properties:
                         type:
                           type: string
+                          description: "Error type URI"
                         title:
                           type: string
+                          description: "Error title"
                         status:
                           type: integer
+                          description: "HTTP status code"
                         detail:
                           type: string
+                          description: "Error detail message"
                 security:
                   - oauth2:
                       - read:items
@@ -84,6 +90,7 @@ class LintingServiceTest {
                       parameters:
                         - name: X-Correlation-Id
                           in: header
+                          description: "Correlation ID for request tracking"
                           schema:
                             type: string
                       responses:
@@ -97,17 +104,8 @@ class LintingServiceTest {
                                   type: object
                               example:
                                 - id: 1
-                        "500":
-                          description: "Error"
-                          content:
-                            application/json:
-                              schema:
-                                $ref: '#/components/schemas/Error'
-                              example:
-                                type: "about:blank"
-                                title: "Error"
-                                status: 500
-                                detail: "Unexpected"
+                        "204":
+                          description: "No content"
                   /health:
                     get:
                       operationId: health-check
@@ -185,5 +183,129 @@ class LintingServiceTest {
 
         assertFalse(result.valid());
         assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("parser")));
+    }
+
+    @Test
+    void analyzeOwaspRuleset_shouldIncludeCoveredExistingRules() {
+        String spec = """
+                openapi: "3.0.3"
+                info:
+                  title: "Test API"
+                servers:
+                  - url: http://api.test.com
+                paths:
+                  /items:
+                    get:
+                      responses:
+                        "200":
+                          description: "OK"
+                """;
+
+        LintingResult result = lintingService.analyze(spec, List.of("owasp-api-security-top-10"));
+
+        assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("security-schemes-required")));
+        assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("https-required")));
+        assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("versioning-required")));
+        assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("description-required")));
+        assertTrue(result.issues().stream().anyMatch(i -> i.ruleId().equals("response-schema-required")));
+    }
+
+    @Test
+    void analyzeOwaspRuleset_shouldFlagUnrestrictedStringParameters() {
+        LintingResult result = lintingService.analyze(baseOwaspSpec("""
+                - name: userId
+                  in: path
+                  required: true
+                  description: "User identifier"
+                  schema:
+                    type: string
+                    format: uuid
+                - name: filter
+                  in: query
+                  description: "Filter expression"
+                  schema:
+                    type: string
+                """, true), List.of("owasp-api-security-top-10"));
+
+        assertTrue(result.issues().stream()
+                .anyMatch(i -> i.ruleId().equals("injection-pattern-on-string-parameters")));
+    }
+
+    @Test
+    void analyzeOwaspRuleset_shouldRequire429Responses() {
+        LintingResult result = lintingService.analyze(baseOwaspSpec("", false), List.of("owasp-api-security-top-10"));
+
+        assertTrue(result.issues().stream()
+                .anyMatch(i -> i.ruleId().equals("lack-of-resources-and-rate-limiting-too-many-requests")));
+    }
+
+    @Test
+    void analyzeOwaspRuleset_shouldRequireUuidObjectIdentifiers() {
+        LintingResult result = lintingService.analyze(baseOwaspSpec("""
+                - name: userId
+                  in: path
+                  required: true
+                  description: "User identifier"
+                  schema:
+                    type: integer
+                """, true), List.of("owasp-api-security-top-10"));
+
+        assertTrue(result.issues().stream()
+                .anyMatch(i -> i.ruleId().equals("broken-object-level-authorization-use-guids")));
+    }
+
+    private String baseOwaspSpec(String additionalParameters, boolean include429) {
+        String defaultParameters = """
+                - name: userId
+                  in: path
+                  required: true
+                  description: "User identifier"
+                  schema:
+                    type: string
+                    format: uuid
+                """;
+        String parametersBlock = (additionalParameters.isBlank() ? defaultParameters : additionalParameters)
+                .stripTrailing()
+                .indent(22)
+                .stripTrailing();
+
+        StringBuilder spec = new StringBuilder()
+                .append("openapi: \"3.0.3\"\n")
+                .append("info:\n")
+                .append("  title: \"Secure API\"\n")
+                .append("  description: \"OWASP aligned API\"\n")
+                .append("  version: \"1.0.0\"\n")
+                .append("servers:\n")
+                .append("  - url: https://api.test.com\n")
+                .append("components:\n")
+                .append("  securitySchemes:\n")
+                .append("    bearerAuth:\n")
+                .append("      type: http\n")
+                .append("      scheme: bearer\n")
+                .append("security:\n")
+                .append("  - bearerAuth: []\n")
+                .append("paths:\n")
+                .append("  /v1/users/{userId}:\n")
+                .append("    get:\n")
+                .append("      operationId: get-user\n")
+                .append("      summary: \"Get user\"\n")
+                .append("      description: \"Returns a user\"\n")
+                .append("      parameters:\n")
+                .append(parametersBlock)
+                .append("\n")
+                .append("      responses:\n")
+                .append("        \"200\":\n")
+                .append("          description: \"OK\"\n")
+                .append("          content:\n")
+                .append("            application/json:\n")
+                .append("              schema:\n")
+                .append("                type: object\n");
+
+        if (include429) {
+            spec.append("        \"429\":\n")
+                    .append("          description: \"Too Many Requests\"\n");
+        }
+
+        return spec.toString();
     }
 }

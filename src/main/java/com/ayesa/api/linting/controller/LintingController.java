@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -65,7 +66,11 @@ public class LintingController {
             description = "Returns all rulesets with their rules, descriptions, and tags")
     public ResponseEntity<List<Ruleset>> listRulesets() {
         Map<String, List<LintingRule>> rulesByRuleset = lintingEngine.getRules().stream()
-                .collect(Collectors.groupingBy(LintingRule::getRulesetId));
+                .flatMap(rule -> rule.getRulesetIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(rulesetId -> Map.entry(rulesetId, rule)))
+                .collect(Collectors.groupingBy(Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
         List<Ruleset> rulesets = RulesetCatalog.RULESETS.values().stream()
                 .map(info -> {
@@ -94,10 +99,11 @@ public class LintingController {
             @Parameter(description = "Filter by ruleset ID")
             @RequestParam(required = false) String ruleset) {
         List<Map<String, String>> rules = lintingEngine.getRules().stream()
-                .filter(rule -> ruleset == null || rule.getRulesetId().equals(ruleset))
+                .filter(rule -> ruleset == null || rule.getRulesetIds().contains(ruleset))
                 .map(rule -> Map.of(
                         "ruleId", rule.getRuleId(),
                         "rulesetId", rule.getRulesetId(),
+                        "rulesetIds", String.join(",", rule.getRulesetIds()),
                         "description", rule.getDescription()
                 ))
                 .toList();
