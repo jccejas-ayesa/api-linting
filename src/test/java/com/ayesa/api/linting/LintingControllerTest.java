@@ -172,14 +172,6 @@ class LintingControllerTest {
     }
 
     @Test
-    void listRules_shouldReturnAllRules() throws Exception {
-        mockMvc.perform(get("/api/v1/lint/rules"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(lintingEngine.getRules().size()));
-    }
-
-    @Test
     void analyzeEmptyBody_shouldReturn400() throws Exception {
         mockMvc.perform(post("/api/v1/lint")
                         .contentType(MediaType.APPLICATION_JSON)

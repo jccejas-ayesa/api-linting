@@ -92,21 +92,4 @@ public class LintingController {
         return ResponseEntity.ok(rulesets);
     }
 
-    @GetMapping("/rules")
-    @Operation(summary = "List available linting rules",
-            description = "Returns all rules with their IDs, descriptions, and ruleset membership")
-    public ResponseEntity<List<Map<String, String>>> listRules(
-            @Parameter(description = "Filter by ruleset ID")
-            @RequestParam(required = false) String ruleset) {
-        List<Map<String, String>> rules = lintingEngine.getRules().stream()
-                .filter(rule -> ruleset == null || rule.getRulesetIds().contains(ruleset))
-                .map(rule -> Map.of(
-                        "ruleId", rule.getRuleId(),
-                        "rulesetId", rule.getRulesetId(),
-                        "rulesetIds", String.join(",", rule.getRulesetIds()),
-                        "description", rule.getDescription()
-                ))
-                .toList();
-        return ResponseEntity.ok(rules);
-    }
 }
