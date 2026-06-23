@@ -372,6 +372,21 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ---
 
+## 📝 Changelog
+
+### Version 1.0.0 (2026-06-23) - RELEASED ✅
+- ✅ Initial release with 141 governance rules
+- ✅ 14 semantic rulesets for API governance
+- ✅ Health check endpoints (Kubernetes-style probes)
+- ✅ Ruleset toggle mechanism with 3-tier caching strategy
+- ✅ Full OpenAPI/Swagger documentation
+- ✅ 52 integration tests all passing
+- ✅ CI/CD integration examples (GitHub Actions, Jenkins)
+- ✅ Production-ready deployment with Docker/Kubernetes support
+- ✅ Comprehensive operational guide and test commands
+
+---
+
 ## 📄 License
 
 Enterprise API Governance Service (Ayesa)
