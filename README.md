@@ -59,7 +59,7 @@ Proporcionar un servicio **asesor de linting** (v1.0) para validar especificacio
 | **owasp-api-security-top-10**               | 10     | Controles de seguridad OWASP Top 10       |
 | **required-examples**                       | 6      | Ejemplos en schemas y responses           |
 | **api-catalog-information-best-practices**  | 9      | Extensiones governance, domain, lifecycle |
-| **reference-best-practices**                | 7      | Patrones MuleSoft Anypoint                |
+| **reference-best-practices**                | 7      | Patrones Reference                        |
 | **reference-api-management-best-practices** | 11     | Rate limiting, health, resilience         |
 | **agent-network-best-practices**            | 8      | Patrones agent-network específicos        |
 | **datagraph-best-practices**                | 9      | Convenciones Datagraph                    |
@@ -375,6 +375,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 ## 📝 Changelog
 
 ### Version 1.0.0 (2026-06-23) - RELEASED ✅
+
 - ✅ Initial release with 141 governance rules
 - ✅ 14 semantic rulesets for API governance
 - ✅ Health check endpoints (Kubernetes-style probes)
